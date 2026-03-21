@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.pyc
+.next/
+out/
+build/
+dist/
+
+# Environments (CRITICAL: Do not push these)
+.env
+.env.local
+.env.development
+.env.production
+.env*.local
+*.env
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
+
+# MCP Configs
+mcp-config.json
+infra/mcp/*.json
+
+# Docker
+.docker/
