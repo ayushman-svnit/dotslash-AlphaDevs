@@ -418,7 +418,7 @@ export default function Home() {
       {/* ── HERO ─────────────────────────────────── */}
       <section className="relative min-h-screen bg-[#166534] flex flex-col items-center justify-center text-white overflow-hidden pt-24 pb-0">
         <HeroShapes />
-        <motion.div style={{ y: heroY }} className="relative z-10 text-center px-6 max-w-6xl mx-auto flex flex-col items-center">
+        <motion.div style={{ y: heroY }} className="relative z-10 text-center px-6 max-w-6xl mx-auto flex flex-col items-center flex-1 justify-center w-full">
 
           {/* small label */}
           <motion.p
@@ -455,14 +455,14 @@ export default function Home() {
             AI-powered wildlife corridor mapping for governments, rangers, and citizens. Protect biodiversity before roads destroy it.
           </motion.p>
 
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }} className="flex flex-col sm:flex-row gap-5 items-center mb-32">
-            <PillButton href="/signup" label="Deploy Platform" />
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }} className="flex flex-col sm:flex-row gap-5 items-center mb-48">
+            <PillButton href="/signup" label="Sign Up" />
             <a href="#roles" className="text-green-200 font-bold uppercase tracking-widest text-sm hover:text-white transition-colors underline underline-offset-4">Explore Roles →</a>
           </motion.div>
         </motion.div>
 
-        {/* HERO BASE cream ribbon ticker — layered over hero bottom */}
-        <div className="absolute bottom-0 left-0 w-full pb-8">
+        {/* HERO BASE cream ribbon ticker — sits below hero content */}
+        <div className="w-full mt-auto">
           <TickerBelt
             items={['Wildlife AI','Corridor Mapping','Forest Intelligence','Eco Routing','Species Tracking','Ranger Alerts','Impact Simulation']}
             speed={25} cream rotate="-2deg"

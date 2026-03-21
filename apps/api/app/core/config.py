@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     # Mapping/GIS
     NEXT_PUBLIC_GFW_API_KEY: str = ""
 
+    # Officer contact (override via env for production)
+    OFFICER_PHONE: str = "+919408569457"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

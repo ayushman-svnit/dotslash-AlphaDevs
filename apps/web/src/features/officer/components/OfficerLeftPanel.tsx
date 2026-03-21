@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AlertTriangle, MapPin, Zap, TrendingUp, ShieldCheck, Clock, Flame } from "lucide-react";
+import { AlertTriangle, MapPin, TrendingUp, ShieldCheck, Clock, Flame } from "lucide-react";
+import { useAuthFetch } from "@/hooks/useAuthFetch";
 
 interface FirePoint {
   lat: number;
@@ -19,6 +20,7 @@ export function OfficerLeftPanel() {
   const [reports, setReports] = useState<any[]>([]);
   const [fires, setFires] = useState<FirePoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const authFetch = useAuthFetch();
 
   const fetchFires = async () => {
     try {
@@ -34,9 +36,9 @@ export function OfficerLeftPanel() {
     const fetchData = async () => {
       try {
         const [moveRes, alertRes, reportRes] = await Promise.all([
-          fetch("http://localhost:8000/api/v1/officer/movement-prediction").catch(() => null),
-          fetch("http://localhost:8000/api/v1/officer/roadkill-alerts").catch(() => null),
-          fetch("http://localhost:8000/api/v1/officer/citizen-reports").catch(() => null),
+          authFetch("http://localhost:8000/api/v1/officer/movement-prediction").catch(() => null),
+          authFetch("http://localhost:8000/api/v1/officer/roadkill-alerts").catch(() => null),
+          authFetch("http://localhost:8000/api/v1/officer/citizen-reports").catch(() => null),
         ]);
         if (moveRes?.ok) setMovement(await moveRes.json());
         if (alertRes?.ok) setAlerts(await alertRes.json());
@@ -224,11 +226,7 @@ export function OfficerLeftPanel() {
         </div>
       )}
 
-      <div className="p-8 bg-white/60 mt-auto border-t border-green-900/5">
-        <button className="w-full py-5 bg-[#166534] text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] hover:bg-green-900 transition-all shadow-[0_15px_30px_rgba(0,0,0,0.2)] flex items-center justify-center gap-3">
-          <Zap className="w-4 h-4 text-[#4ade80] animate-pulse" /> Finalize Patrol Area
-        </button>
-      </div>
+
     </div>
   );
 }

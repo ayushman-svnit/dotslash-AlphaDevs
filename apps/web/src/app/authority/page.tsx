@@ -41,7 +41,9 @@ export default function DashboardPage() {
     if (!loading) {
       if (!user) {
         router.push("/login");
-      } else if (user.role !== "AUTHORITY") {
+      } else if (user.role === "OFFICER") {
+        router.push("/officer");
+      } else if (user.role === "CITIZEN") {
         router.push("/citizen");
       }
     }

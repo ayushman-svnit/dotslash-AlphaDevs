@@ -12,6 +12,18 @@ export interface WildlifeAlertPayload {
 export const useAlertWebSocket = (userId: string) => {
   const [activeAlerts, setActiveAlerts] = useState<WildlifeAlertPayload[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
+  const locationRef = useRef<{ lat: number; lng: number } | null>(null);
+
+  // Track real GPS position
+  useEffect(() => {
+    if (!('geolocation' in navigator)) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => { locationRef.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }; },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 30000 }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
 
   const handleIncomingAlert = (alert: WildlifeAlertPayload) => {
     setActiveAlerts((prev) => {
@@ -50,10 +62,11 @@ export const useAlertWebSocket = (userId: string) => {
       // In a real app, this integrates with Geolocation API
       const locationInterval = setInterval(() => {
         if (ws.readyState === WebSocket.OPEN) {
+          const loc = locationRef.current ?? { lat: 22.335, lng: 80.615 };
           ws.send(JSON.stringify({
-            lat: 22.335,
-            lng: 80.615,
-            speed_kmh: 40 // Simulate moving at 40 km/h
+            lat: loc.lat,
+            lng: loc.lng,
+            speed_kmh: 40
           }));
         }
       }, 5000);
@@ -90,17 +103,5 @@ export const useAlertWebSocket = (userId: string) => {
     };
   }, [userId]);
 
-  const simulateAlert = (species: string, urgency: string = 'Critical') => {
-    const alert: WildlifeAlertPayload = {
-      lat: 22.335 + (Math.random() * 0.01),
-      lng: 80.615 + (Math.random() * 0.01),
-      species_id: species,
-      urgency_level: urgency,
-      time_to_collision_sec: 15,
-      location_h3_index: `mock-h3-${Math.random()}`
-    };
-    handleIncomingAlert(alert);
-  };
-
-  return { activeAlerts, simulateAlert };
+  return { activeAlerts };
 };

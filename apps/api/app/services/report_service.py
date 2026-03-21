@@ -16,9 +16,8 @@ from app.services.animal_detect_service import detect_animal_in_image
 from app.services.notification_service import send_officer_sighting_alert
 
 def get_nearest_officer_phone(lat: float, lng: float) -> str:
-    # MOCK RANGER DATABASE
-    # Switch this to your own number for testing!
-    return "+919408569457"
+    from app.core.config import settings
+    return settings.OFFICER_PHONE
 
 async def process_citizen_report(report: CitizenReportCreate) -> Dict[str, Any]:
     """

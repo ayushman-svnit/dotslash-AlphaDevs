@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Camera, MapPin, Send, AlertTriangle, CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import { storage } from '@/lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { saveReportOffline } from '@/lib/cache/offlineStore';
 
 const ANIMALS = [
@@ -40,7 +38,10 @@ export const TwoTapReporter = ({ userId = 'user-123' }: { userId?: string }) => 
         setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         if (pos.coords.speed) setSpeedKmh(pos.coords.speed * 3.6);
       },
-      (err) => console.error(err),
+      (err) => {
+        // PERMISSION_DENIED = 1, POSITION_UNAVAILABLE = 2, TIMEOUT = 3
+        if (err.code !== 1) console.warn('Geolocation unavailable:', err.message);
+      },
       { enableHighAccuracy: true, maximumAge: 0 }
     );
     return () => navigator.geolocation.clearWatch(watchId);
@@ -63,19 +64,7 @@ export const TwoTapReporter = ({ userId = 'user-123' }: { userId?: string }) => 
     setImagePreview(URL.createObjectURL(file));
   };
 
-  const uploadImageToFirebase = async (file: File): Promise<string> => {
-    const path = `wildlife-sightings/${Date.now()}-${file.name}`;
-    const storageRef = ref(storage, path);
-    const snapshot = await uploadBytes(storageRef, file);
-    return await getDownloadURL(snapshot.ref);
-  };
-
   const handleSubmit = async () => {
-    if (!selectedAnimal) {
-      setStatusMsg('Please select the animal you spotted.');
-      setStatus('error');
-      return;
-    }
     if (!coords) {
       setStatusMsg('Waiting for GPS signal...');
       setStatus('error');
@@ -83,12 +72,25 @@ export const TwoTapReporter = ({ userId = 'user-123' }: { userId?: string }) => 
     }
 
     try {
-      // 1. Upload image
+      // 1. Try image upload (non-blocking — skip if it fails)
       let imageUrl: string | undefined;
       if (imageFile) {
         setStatus('uploading');
-        setStatusMsg('Uploading photo to secure storage...');
-        imageUrl = await uploadImageToFirebase(imageFile);
+        setStatusMsg('Uploading photo...');
+        try {
+          const formData = new FormData();
+          formData.append('file', imageFile);
+          const uploadRes = await Promise.race([
+            fetch('/api/upload', { method: 'POST', body: formData }),
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
+          ]);
+          if (uploadRes.ok) {
+            const d = await uploadRes.json();
+            imageUrl = d.url;
+          }
+        } catch {
+          // silently skip — backend uses fallback image for AI
+        }
       }
 
       // 2. Submit report
@@ -99,7 +101,7 @@ export const TwoTapReporter = ({ userId = 'user-123' }: { userId?: string }) => 
         user_id: userId,
         lat: coords.lat,
         lng: coords.lng,
-        species_id: selectedAnimal,
+        species_id: selectedAnimal || 'Other',
         heading_deg: heading ?? undefined,
         speed_kmh: speedKmh,
         image_url: imageUrl,
@@ -196,15 +198,15 @@ export const TwoTapReporter = ({ userId = 'user-123' }: { userId?: string }) => 
       ) : (
         <div className="space-y-4">
 
-          {/* Step 1 — Animal Selection */}
+          {/* Step 1 — Animal (optional hint for fallback label) */}
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">1 · Select Animal</p>
-            <div className="grid grid-cols-3 gap-2">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">1 · Animal Type <span className="normal-case font-normal text-slate-400">(optional)</span></p>
+            <div className="flex flex-wrap gap-1.5">
               {ANIMALS.map((a) => (
                 <button
                   key={a.id}
-                  onClick={() => setSelectedAnimal(a.id)}
-                  className={`py-2 rounded-xl text-sm font-semibold border-2 transition-all ${
+                  onClick={() => setSelectedAnimal(selectedAnimal === a.id ? null : a.id)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                     selectedAnimal === a.id
                       ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
                       : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
@@ -218,7 +220,7 @@ export const TwoTapReporter = ({ userId = 'user-123' }: { userId?: string }) => 
 
           {/* Step 2 — Photo Upload */}
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">2 · Upload Photo (Required for AI Verify)</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">2 · Upload Photo (Improves AI Accuracy)</p>
             <input ref={fileInputRef} type="file" accept="image/*" capture="environment" onChange={handleImageChange} className="hidden" />
             {imagePreview ? (
               <div className="relative">

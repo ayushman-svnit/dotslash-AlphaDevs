@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import React, { useState, Suspense } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import { useRouter } from "next/navigation";
@@ -27,13 +27,27 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  // Redirect already logged-in users
+  React.useEffect(() => {
+    const currentUser = auth.currentUser;
+    if (currentUser?.displayName) {
+      const [, roleStr] = currentUser.displayName.split("|");
+      const role = (roleStr || "CITIZEN").toUpperCase();
+      if (role === "OFFICER") router.push("/officer");
+      else if (role === "AUTHORITY") router.push("/authority");
+      else router.push("/citizen");
+    }
+  }, [router]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const displayName = userCredential.user.displayName || "";
+      // Reload to ensure displayName is fresh before reading role
+      await userCredential.user.reload();
+      const displayName = auth.currentUser?.displayName || "";
       const [, roleStr] = displayName.split("|");
       const role = (roleStr || "CITIZEN").toUpperCase();
       if (role === "OFFICER") router.push("/officer");
@@ -52,7 +66,7 @@ function LoginForm() {
     <div className="min-h-screen flex font-sans overflow-hidden bg-[#166534]">
 
       {/* ── LEFT PANEL (hero side) ── */}
-      <div className="hidden lg:flex flex-1 flex-col justify-between p-14 relative overflow-hidden">
+      <div className="hidden lg:flex flex-1 flex-col justify-between p-14 xl:p-20 relative overflow-hidden">
         {/* Background abstract shapes */}
         <Blob className="w-80 h-80 bg-green-500/20 blur-3xl -top-20 -left-20" />
         <Blob className="w-64 h-64 bg-lime-400/15 blur-2xl bottom-20 right-10" style={{ animationDelay: "2s" }} />
@@ -86,7 +100,7 @@ function LoginForm() {
           </svg>
         </motion.div>
         <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 5, repeat: Infinity, delay: 0.5 }}
-          className="absolute top-1/2 left-8 w-16 h-16 rounded-2xl bg-orange-400"
+          className="absolute top-1/2 right-8 w-16 h-16 rounded-2xl bg-orange-400"
           style={{ boxShadow: "5px 5px 0px #0f0f0f" }} />
 
         {/* Branding content */}

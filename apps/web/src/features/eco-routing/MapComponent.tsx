@@ -40,7 +40,7 @@ export const MapComponent = () => {
   const [lastSmsZone, setLastSmsZone] = useState<string | null>(null);
   
   // Real-time alerts
-  const { activeAlerts, simulateAlert } = useAlertWebSocket('user-123'); 
+  const { activeAlerts } = useAlertWebSocket('user-123'); 
 
   // Haversine Distance Formula (Meters)
   const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -150,20 +150,19 @@ export const MapComponent = () => {
       
       {/* Legend & Info Panel */}
       <div className="absolute top-4 left-4 z-10 space-y-4">
-        <div className="bg-white/95 backdrop-blur p-5 rounded-2xl shadow-xl border border-slate-200 w-80">
-          <h3 className="font-black text-lg flex items-center gap-2 mb-1 text-slate-800 uppercase tracking-tighter">
-            <AlertTriangle className="text-emerald-600" />
+        <div className="bg-white/95 backdrop-blur p-5 rounded-2xl shadow-xl border border-slate-200 w-72">
+          <h3 className="font-black text-base flex items-center gap-2 mb-1 text-slate-800 uppercase tracking-tighter">
+            <AlertTriangle className="text-emerald-600 w-5 h-5" />
             Wildlife Hotspots
           </h3>
-          <p className="text-[10px] text-slate-500 font-bold mb-4 uppercase tracking-widest">Minimal Danger Dots</p>
-
-          <div className="space-y-2 text-xs font-bold text-slate-700">
-            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#ff0000]"></span> CR - Critically Endangered</div>
-            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#ffa500]"></span> EN - Endangered</div>
-            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#ffff00]"></span> VU - Vulnerable</div>
-            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#9acd32]"></span> NT - Near Threatened</div>
-            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#00ff00]"></span> LC - Least Concern</div>
-            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#006400]"></span> DD - Data Deficient</div>
+          <p className="text-[10px] text-slate-500 font-bold mb-4 uppercase tracking-widest">IUCN Status Legend</p>
+          <div className="space-y-2.5 text-sm font-bold text-slate-700">
+            <div className="flex items-center gap-3"><span className="w-3.5 h-3.5 rounded-full bg-[#ff0000] shrink-0"></span> CR — Critically Endangered</div>
+            <div className="flex items-center gap-3"><span className="w-3.5 h-3.5 rounded-full bg-[#ffa500] shrink-0"></span> EN — Endangered</div>
+            <div className="flex items-center gap-3"><span className="w-3.5 h-3.5 rounded-full bg-[#ffff00] shrink-0"></span> VU — Vulnerable</div>
+            <div className="flex items-center gap-3"><span className="w-3.5 h-3.5 rounded-full bg-[#9acd32] shrink-0"></span> NT — Near Threatened</div>
+            <div className="flex items-center gap-3"><span className="w-3.5 h-3.5 rounded-full bg-[#00ff00] shrink-0"></span> LC — Least Concern</div>
+            <div className="flex items-center gap-3"><span className="w-3.5 h-3.5 rounded-full bg-[#006400] shrink-0"></span> DD — Data Deficient</div>
           </div>
         </div>
 
@@ -177,26 +176,6 @@ export const MapComponent = () => {
           </div>
         )}
 
-        {/* Simulator Tools */}
-        <div className="bg-slate-900/90 backdrop-blur p-4 rounded-xl shadow-2xl border border-slate-700 w-80">
-          <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-3 flex items-center gap-2">
-             Test Simulator
-          </h4>
-          <div className="grid grid-cols-2 gap-2">
-            <button 
-              onClick={() => simulateAlert('🐘 Elephant')}
-              className="bg-slate-800 hover:bg-slate-700 text-white text-[10px] p-2 rounded border border-slate-600 transition"
-            >
-              🐘 Simulate Elephant
-            </button>
-            <button 
-              onClick={() => simulateAlert('🐆 Leopard')}
-              className="bg-slate-800 hover:bg-slate-700 text-white text-[10px] p-2 rounded border border-slate-600 transition"
-            >
-              🐆 Simulate Leopard
-            </button>
-          </div>
-        </div>
       </div>
 
       <Map

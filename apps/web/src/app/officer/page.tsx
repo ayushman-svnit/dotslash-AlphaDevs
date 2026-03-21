@@ -26,8 +26,10 @@ export default function OfficerPage() {
     if (!loading) {
       if (!user) {
         router.push("/login");
-      } else if (user.role !== "OFFICER") {
-        router.push("/citizen"); 
+      } else if (user.role === "AUTHORITY") {
+        router.push("/authority");
+      } else if (user.role === "CITIZEN") {
+        router.push("/citizen");
       }
     }
   }, [user, loading, router]);

@@ -1,7 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import authority, officer, citizen, routing_router, alert_router, report_router
 from app.core.config import settings
+from app.core.security import get_current_user
 from app.services.redis_service import redis_service
 
 app = FastAPI(
@@ -20,9 +21,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(authority.router, prefix="/api/v1/authority", tags=["authority"])
-app.include_router(officer.router, prefix="/api/v1/officer", tags=["officer"])
+# Include routers — authority + officer are JWT-protected
+app.include_router(authority.router, prefix="/api/v1/authority", tags=["authority"],
+                   dependencies=[Depends(get_current_user)])
+app.include_router(officer.router, prefix="/api/v1/officer", tags=["officer"],
+                   dependencies=[Depends(get_current_user)])
 app.include_router(citizen.router, prefix="/api/v1/citizen", tags=["citizen"])
 app.include_router(routing_router.router, prefix="/api/v1/routing", tags=["routing"])
 app.include_router(alert_router.router, prefix="/ws/alerts", tags=["alerts"])

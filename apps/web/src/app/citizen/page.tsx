@@ -10,12 +10,18 @@ export default function CitizenPage() {
   const router = useRouter();
 
   React.useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+    if (!loading) {
+      if (!user) {
+        router.push('/login');
+      } else if (user.role === 'AUTHORITY') {
+        router.push('/authority');
+      } else if (user.role === 'OFFICER') {
+        router.push('/officer');
+      }
     }
   }, [user, loading, router]);
 
-  if (loading || !user) return <div className="p-8 h-screen w-screen flex items-center justify-center bg-emerald-50 text-emerald-800">Loading Citizen Dashboard...</div>;
+  if (loading || !user || user.role !== 'CITIZEN') return <div className="p-8 h-screen w-screen flex items-center justify-center bg-emerald-50 text-emerald-800">Loading Citizen Dashboard...</div>;
 
   return (
     <div className="min-h-screen bg-[#f5f2e9] flex flex-col font-sans">

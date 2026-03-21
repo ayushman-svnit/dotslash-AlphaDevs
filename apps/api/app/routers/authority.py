@@ -27,7 +27,7 @@ def get_forest_data(lat: float, lon: float, gfw_api_key: str) -> float:
     url = "https://data-api.globalforestwatch.org/dataset/umd_tree_cover_loss/latest/query"
     headers = {"x-api-key": gfw_api_key, "Content-Type": "application/json"}
     payload = {
-        "sql": "SELECT sum(area__ha) FROM results WHERE umd_tree_cover_density__threshold=30",
+        "sql": "SELECT sum(area__ha) FROM results WHERE umd_tree_cover_density_2000__percent >= 30",
         "geometry": geometry
     }
     response = requests.post(url, json=payload, headers=headers)

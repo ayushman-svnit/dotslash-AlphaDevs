@@ -43,23 +43,31 @@ export const CitizenDashboard = () => {
            <TwoTapReporter userId={userId} />
         </div>
 
-        <div className="mt-auto bg-[#4ade80] rounded-[2rem] p-6 text-green-950 shadow-[10px_10px_0px_rgba(0,0,0,0.2)]">
-          <h3 className="text-lg font-black uppercase tracking-tight mb-4 flex items-center gap-2">
-            <span className="w-8 h-8 rounded-full bg-green-900/10 flex items-center justify-center font-black">?</span>
+        <div className="mt-auto bg-[#4ade80] rounded-[2rem] p-5 text-green-950 shadow-[10px_10px_0px_rgba(0,0,0,0.2)]">
+          <h3 className="text-sm font-black uppercase tracking-tight mb-3 flex items-center gap-2">
+            <span className="w-7 h-7 rounded-full bg-green-900/10 flex items-center justify-center font-black text-xs">?</span>
             Protocols
           </h3>
-          <ul className="space-y-4 font-bold text-sm leading-tight opacity-90">
-            <li className="flex gap-3">
-               <span className="w-2 h-2 rounded-full bg-green-900 mt-1.5 shrink-0" />
-               The map shows routes prioritizing standard migratory trails.
+          <ul className="space-y-2 font-semibold text-xs leading-snug opacity-90">
+            <li className="flex gap-2">
+               <span className="w-1.5 h-1.5 rounded-full bg-green-900 mt-1.5 shrink-0" />
+               Map shows live IUCN-classified wildlife hotspots across India.
             </li>
-            <li className="flex gap-3">
-               <span className="w-2 h-2 rounded-full bg-green-900 mt-1.5 shrink-0" />
-               If you exceed 20km/h, Reporter switches to Driver Mode.
+            <li className="flex gap-2">
+               <span className="w-1.5 h-1.5 rounded-full bg-green-900 mt-1.5 shrink-0" />
+               Speed &gt;20km/h switches Reporter to Driver Mode automatically.
             </li>
-            <li className="flex gap-3">
-               <span className="w-2 h-2 rounded-full bg-green-900 mt-1.5 shrink-0" />
-               Alerts populate in real-time when crossing detected.
+            <li className="flex gap-2">
+               <span className="w-1.5 h-1.5 rounded-full bg-green-900 mt-1.5 shrink-0" />
+               Real-time alerts fire when a verified crossing is detected near you.
+            </li>
+            <li className="flex gap-2">
+               <span className="w-1.5 h-1.5 rounded-full bg-green-900 mt-1.5 shrink-0" />
+               Photos are AI-verified before rangers are notified via SMS.
+            </li>
+            <li className="flex gap-2">
+               <span className="w-1.5 h-1.5 rounded-full bg-green-900 mt-1.5 shrink-0" />
+               Offline reports sync automatically when connection is restored.
             </li>
           </ul>
         </div>

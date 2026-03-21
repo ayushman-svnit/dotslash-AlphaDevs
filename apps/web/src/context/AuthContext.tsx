@@ -2,13 +2,15 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth } from '@/lib/firebase/config';
 
 export type UserRole = 'AUTHORITY' | 'OFFICER' | 'CITIZEN';
 
 export interface EcoUser extends User {
   role?: UserRole;
   name?: string;
+  lat?: number;
+  lng?: number;
 }
 
 interface AuthContextType {
@@ -29,20 +31,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      let ecoUser: EcoUser | null = null;
       if (firebaseUser) {
         const displayName = firebaseUser.displayName || '';
-        const [name, roleStr] = displayName.split('|');
-        ecoUser = {
+        const [name, roleStr, latStr, lngStr] = displayName.split('|');
+        setUser({
           ...firebaseUser,
           role: (roleStr as UserRole) || 'CITIZEN',
           name: name || '',
-        };
+          lat: latStr ? parseFloat(latStr) : undefined,
+          lng: lngStr ? parseFloat(lngStr) : undefined,
+        });
+      } else {
+        setUser(null);
       }
-      setUser(ecoUser);
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 

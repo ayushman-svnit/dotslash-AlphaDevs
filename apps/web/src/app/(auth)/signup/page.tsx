@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, signOut, updateCurrentUser } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import { useRouter } from "next/navigation";
 import {
@@ -35,6 +35,8 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState("citizen");
   const [department, setDepartment] = useState("");
+  const [officerLat, setOfficerLat] = useState("");
+  const [officerLng, setOfficerLng] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -46,9 +48,12 @@ export default function SignupPage() {
     try {
       if (auth.currentUser) await signOut(auth);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(userCredential.user, {
-        displayName: `${fullName}|${role.toUpperCase()}`,
-      });
+      const displayName = role === "officer" && officerLat && officerLng
+        ? `${fullName}|${role.toUpperCase()}|${officerLat}|${officerLng}`
+        : `${fullName}|${role.toUpperCase()}`;
+      await updateProfile(userCredential.user, { displayName });
+      // Re-set current user to force onAuthStateChanged to re-fire with updated profile
+      await updateCurrentUser(auth, userCredential.user);
       router.push(`/${role}`);
     } catch (err: any) {
       setError(err.message || "Failed to create account. Email may already be in use.");
@@ -68,7 +73,7 @@ export default function SignupPage() {
     <div className="min-h-screen flex font-sans overflow-hidden bg-[#166534]">
 
       {/* ── LEFT PANEL ── */}
-      <div className="hidden lg:flex flex-1 flex-col justify-between p-14 relative overflow-hidden">
+      <div className="hidden lg:flex flex-1 flex-col justify-between px-20 py-14 relative overflow-hidden">
         <Blob className="w-72 h-72 bg-green-500/20 blur-3xl -top-16 -left-16" />
         <Blob className="w-56 h-56 bg-lime-400/15 blur-2xl bottom-20 right-6" style={{ animationDelay: "3s" }} />
 
@@ -100,10 +105,10 @@ export default function SignupPage() {
           </svg>
         </motion.div>
         <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 5, repeat: Infinity, delay: 0.8 }}
-          className="absolute top-1/2 left-10 w-14 h-14 rounded-2xl bg-pink-500"
+          className="absolute top-1/2 right-10 w-14 h-14 rounded-2xl bg-pink-500"
           style={{ boxShadow: "4px 4px 0px #0f0f0f" }} />
         <motion.div animate={{ y: [0, 14, 0], rotate: [3, -3, 3] }} transition={{ duration: 9, repeat: Infinity, delay: 0.4 }}
-          className="absolute bottom-28 left-8 w-20 h-10 rounded-xl bg-orange-400"
+          className="absolute bottom-28 right-8 w-20 h-10 rounded-xl bg-orange-400"
           style={{ boxShadow: "4px 5px 0px #0f0f0f" }} />
 
         {/* Logo */}
@@ -209,6 +214,27 @@ export default function SignupPage() {
                 ))}
               </div>
             </div>
+
+            {/* Officer Location — only shown when Officer role is selected */}
+            {role === "officer" && (
+              <div>
+                <label className="block text-xs font-black text-green-300 uppercase tracking-widest mb-2">
+                  Posted Location <span className="text-green-500/50 normal-case font-medium">(lat, lng of your patrol zone)</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="number" step="any" value={officerLat}
+                    onChange={e => setOfficerLat(e.target.value)}
+                    className={inputClsBase} placeholder="Latitude e.g. 22.33"
+                  />
+                  <input
+                    type="number" step="any" value={officerLng}
+                    onChange={e => setOfficerLng(e.target.value)}
+                    className={inputClsBase} placeholder="Longitude e.g. 80.61"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Email */}
             <div>

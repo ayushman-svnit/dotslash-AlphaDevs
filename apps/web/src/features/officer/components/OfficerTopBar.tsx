@@ -1,6 +1,6 @@
 "use client";
 
-import { Shield, Radio, Map as MapIcon, LogOut, Leaf } from "lucide-react";
+import { LogOut, Leaf } from "lucide-react";
 import { auth } from "@/lib/firebase/config";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -38,17 +38,6 @@ export function OfficerTopBar() {
       </div>
 
       <div className="flex items-center gap-8 relative z-10">
-        <div className="hidden md:flex items-center gap-6">
-          <div className="flex flex-col items-end">
-             <span className="text-[9px] font-black uppercase tracking-widest text-green-300 opacity-50 flex items-center gap-1.5"><Radio className="w-2.5 h-2.5" /> HQ Status</span>
-             <span className="text-xs font-bold text-white">Active Comms</span>
-          </div>
-          <div className="flex flex-col items-end">
-             <span className="text-[9px] font-black uppercase tracking-widest text-green-300 opacity-50 flex items-center gap-1.5"><MapIcon className="w-2.5 h-2.5" /> Sector</span>
-             <span className="text-xs font-bold text-white">Central Corridor</span>
-          </div>
-        </div>
-        
         <button 
           onClick={handleLogout}
           className="p-3 bg-white/5 border border-white/10 hover:bg-white/10 rounded-full transition-all text-white group"
