@@ -11,7 +11,7 @@ const ANIMALS = [
   { id: 'Tiger', emoji: '🐅' },
   { id: 'Leopard', emoji: '🐆' },
   { id: 'Deer', emoji: '🦌' },
-  { id: 'Boar', emoji: '🐗' },
+  { id: 'Roadkill', emoji: '🦴' },
   { id: 'Other', emoji: '🐾' },
 ];
 
@@ -165,11 +165,11 @@ export const TwoTapReporter = ({ userId = 'user-123' }: { userId?: string }) => 
           {isDriverMode ? 'DRIVER MODE' : '🐾 Report a Sighting'}
         </h3>
         {coords ? (
-          <span className="text-xs font-mono text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full flex items-center gap-1">
-            <MapPin size={10} /> GPS Live
+          <span className="text-[10px] font-black text-white bg-emerald-600 px-2 py-1 rounded flex items-center gap-1 animate-pulse uppercase tracking-tighter">
+            <MapPin size={10} /> Live Location Sharing Active
           </span>
         ) : (
-          <span className="text-xs text-slate-400">Acquiring GPS...</span>
+          <span className="text-xs text-slate-400">Acquiring Live GPS...</span>
         )}
       </div>
 

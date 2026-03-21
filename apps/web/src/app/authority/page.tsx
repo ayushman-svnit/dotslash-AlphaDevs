@@ -10,19 +10,35 @@ export default function DashboardPage() {
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [roadPoints, setRoadPoints] = useState<{ lat: number, lng: number }[]>([]);
   const [analysisState, setAnalysisState] = useState<"idle" | "loading" | "complete">("idle");
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [selectedAltId, setSelectedAltId] = useState<string | null>(null);
 
   const handleReset = () => {
     setSelectedRegion(null);
     setRoadPoints([]);
     setAnalysisState("idle");
+    setAnalysisResult(null);
+    setSelectedAltId(null);
   };
 
-  const handleAnalyse = () => {
+  const handleAnalyse = async () => {
     setAnalysisState("loading");
-    // Simulate complex AI/GIS processing
-    setTimeout(() => {
+    try {
+      const response = await fetch("http://localhost:8000/api/v1/authority/road-planning", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          points: roadPoints.map(p => [p.lat, p.lng]),
+          zone_id: selectedRegion
+        })
+      });
+      const data = await response.json();
+      setAnalysisResult(data);
       setAnalysisState("complete");
-    }, 2500);
+    } catch (error) {
+      console.error("Analysis failed:", error);
+      setAnalysisState("idle");
+    }
   };
 
   return (
@@ -38,13 +54,16 @@ export default function DashboardPage() {
         <LeftPanel 
           selectedRegion={selectedRegion}
           analysisState={analysisState}
+          result={analysisResult}
+          selectedAltId={selectedAltId}
+          onSelectAlt={setSelectedAltId}
         />
         <MapArea 
           selectedRegion={selectedRegion}
           onSelectRegion={(region) => {
             if (analysisState === "idle") {
                 setSelectedRegion(region);
-                setRoadPoints([]); // clear old drawing if switching regions
+                setRoadPoints([]); 
             }
           }}
           roadPoints={roadPoints}
@@ -52,6 +71,8 @@ export default function DashboardPage() {
             if (analysisState === "idle") setRoadPoints(prev => [...prev, point]);
           }}
           analysisState={analysisState}
+          alternatives={analysisResult?.alternatives || []}
+          selectedAltId={selectedAltId}
         />
       </div>
       

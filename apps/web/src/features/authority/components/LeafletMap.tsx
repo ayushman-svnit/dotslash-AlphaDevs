@@ -15,6 +15,8 @@ interface LeafletMapProps {
   roadPoints: Point[];
   onAddRoadPoint: (point: Point) => void;
   analysisState: "idle" | "loading" | "complete";
+  alternatives?: any[];
+  selectedAltId?: string | null;
 }
 
 const NORTHERN_RESERVE: [number, number][] = [
@@ -56,7 +58,9 @@ export default function LeafletMap({
   onSelectRegion,
   roadPoints,
   onAddRoadPoint,
-  analysisState
+  analysisState,
+  alternatives,
+  selectedAltId
 }: LeafletMapProps) {
 
   return (
@@ -125,11 +129,26 @@ export default function LeafletMap({
         <Polyline 
           positions={roadPoints.map(p => [p.lat, p.lng])}
           pathOptions={{
-            color: analysisState === "complete" ? "#f43f5e" : "#3b82f6",
-            weight: analysisState === "complete" ? 6 : 4
+            color: selectedAltId ? "#94a3b8" : (analysisState === "complete" ? "#f43f5e" : "#3b82f6"),
+            weight: analysisState === "complete" ? 6 : 4,
+            opacity: selectedAltId ? 0.4 : 1
           }}
         />
       )}
+
+      {/* Alternative Paths */}
+      {analysisState === "complete" && alternatives && alternatives.map((alt: any) => (
+        <Polyline 
+          key={alt.id}
+          positions={alt.coordinates}
+          pathOptions={{
+            color: selectedAltId === alt.id ? "#10b981" : "#10b981",
+            weight: selectedAltId === alt.id ? 8 : 4,
+            dashArray: selectedAltId === alt.id ? "" : "10, 10",
+            opacity: !selectedAltId || selectedAltId === alt.id ? 1 : 0.2
+          }}
+        />
+      ))}
 
       {/* Impact Buffer UI visual */}
       {analysisState === "complete" && roadPoints.length > 1 && (

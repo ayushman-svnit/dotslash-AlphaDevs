@@ -90,10 +90,11 @@ export const MapComponent = () => {
       {/* Dynamic Navigation & Simulator Panel */}
       <div className="absolute top-4 left-4 z-10 space-y-4">
         <div className="bg-white/95 backdrop-blur p-5 rounded-2xl shadow-xl border border-slate-200 w-80">
-          <h3 className="font-bold text-lg flex items-center gap-2 mb-4 text-slate-800">
+          <h3 className="font-black text-lg flex items-center gap-2 mb-1 text-slate-800 uppercase tracking-tighter">
             <Navigation className="text-emerald-600" />
-            Control Center
+            Plan Best Route
           </h3>
+          <p className="text-[10px] text-slate-500 font-bold mb-4 uppercase tracking-widest">Forest Navigation Intelligence</p>
 
           <div className="space-y-4">
             {/* Vehicle Selection */}
@@ -170,7 +171,7 @@ export const MapComponent = () => {
           latitude={start.lat} 
           longitude={start.lng}
           draggable
-          onDragEnd={(e) => setStart({ lat: e.lngLat.lat, lng: e.lngLat.lng })}
+          onDragEnd={(e: any) => setStart({ lat: e.lngLat.lat, lng: e.lngLat.lng })}
         >
           <div className="group relative flex flex-col items-center cursor-grab active:cursor-grabbing">
              <div className="absolute -top-8 bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition shadow">START</div>
@@ -184,7 +185,7 @@ export const MapComponent = () => {
           latitude={end.lat} 
           longitude={end.lng}
           draggable
-          onDragEnd={(e) => setEnd({ lat: e.lngLat.lat, lng: e.lngLat.lng })}
+          onDragEnd={(e: any) => setEnd({ lat: e.lngLat.lat, lng: e.lngLat.lng })}
         >
           <div className="group relative flex flex-col items-center cursor-grab active:cursor-grabbing">
              <div className="absolute -top-8 bg-red-600 text-white px-2 py-0.5 rounded text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition shadow">DESTINATION</div>

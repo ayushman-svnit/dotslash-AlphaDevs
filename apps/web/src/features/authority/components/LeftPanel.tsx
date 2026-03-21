@@ -6,6 +6,9 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recha
 interface LeftPanelProps {
   selectedRegion: string | null;
   analysisState: "idle" | "loading" | "complete";
+  result?: any;
+  selectedAltId?: string | null;
+  onSelectAlt?: (id: string | null) => void;
 }
 
 const mockChartData = [
@@ -15,7 +18,13 @@ const mockChartData = [
   { name: "Seg 4", risk: 90 },
 ];
 
-export function LeftPanel({ selectedRegion, analysisState }: LeftPanelProps) {
+export function LeftPanel({ 
+  selectedRegion, 
+  analysisState, 
+  result, 
+  selectedAltId, 
+  onSelectAlt 
+}: LeftPanelProps) {
   if (!selectedRegion) {
     return (
       <div className="w-96 bg-white border-r border-slate-200 p-6 flex flex-col items-center justify-center text-center">
@@ -29,7 +38,7 @@ export function LeftPanel({ selectedRegion, analysisState }: LeftPanelProps) {
   }
 
   return (
-    <div className="w-[420px] bg-white border-r border-slate-200 overflow-y-auto flex flex-col">
+    <div className="w-[420px] bg-white border-r border-slate-200 overflow-y-auto flex flex-col relative">
       {/* Section A: Region Overview Card */}
       <div className="p-6 border-b border-slate-100 bg-slate-50/50">
         <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">Region Overview</h2>
@@ -45,71 +54,83 @@ export function LeftPanel({ selectedRegion, analysisState }: LeftPanelProps) {
       {analysisState === "loading" && (
         <div className="p-10 flex flex-col items-center justify-center animate-pulse">
           <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-sm font-medium text-slate-500">Running Impact Simulation...</p>
+          <p className="text-sm font-medium text-slate-500">Running AI Impact Simulation...</p>
         </div>
       )}
 
-      {analysisState === "complete" && (
+      {analysisState === "complete" && result && (
         <>
           <div className="p-6 border-b border-slate-100">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">Impact Summary</h2>
             <div className="flex flex-col items-center justify-center mb-6">
-              <div className="w-32 h-32 rounded-full border-8 border-rose-500 flex flex-col items-center justify-center shadow-inner">
-                <span className="text-3xl font-black text-rose-600">84</span>
+              <div className={`w-32 h-32 rounded-full border-8 ${selectedAltId ? 'border-emerald-500' : 'border-rose-500'} flex flex-col items-center justify-center shadow-inner transition-colors`}>
+                <span className={`text-3xl font-black ${selectedAltId ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  {selectedAltId ? result.alternatives.find((a: any) => a.id === selectedAltId)?.impact_score : result.primary_impact_score}
+                </span>
                 <span className="text-[10px] text-slate-500 font-bold uppercase">Impact Score</span>
               </div>
-              <div className="mt-4 px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-black inline-flex items-center space-x-1 border border-rose-200 shadow-sm">
+              <div className={`mt-4 px-3 py-1 ${selectedAltId ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'} rounded-full text-xs font-black inline-flex items-center space-x-1 border shadow-sm transition-colors`}>
                 <AlertTriangle className="w-3 h-3" />
-                <span>HIGH ECOLOGICAL DAMAGE</span>
+                <span>{selectedAltId ? "OPTIMIZED PATH" : result.damage_classification}</span>
               </div>
             </div>
 
             <div className="space-y-3">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-500 font-medium">Forest Area Affected</span>
-                <span className="text-slate-800 font-bold">12.4 km²</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-500 font-medium">High Risk Segments</span>
-                <span className="text-rose-600 font-bold inline-flex items-center"><AlertTriangle className="w-3 h-3 mr-1" /> 4 segments</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-500 font-medium">Wildlife Corridors Cut</span>
-                <span className="text-rose-600 font-bold inline-flex items-center"><ShieldAlert className="w-3 h-3 mr-1" /> 2 paths</span>
+              <div className="flex justify-between items-center text-sm font-bold">
+                 <span className="text-slate-800">Affected Species</span>
+                 <span className="text-rose-600">{result.affected_species.join(", ")}</span>
               </div>
             </div>
           </div>
 
-          {/* Section C: Charts Area */}
-          <div className="p-6 border-b border-slate-100">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">Segment Risk Distribution</h2>
-            <div className="h-40 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={mockChartData}>
-                  <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
-                  <YAxis fontSize={10} axisLine={false} tickLine={false} />
-                  <Tooltip cursor={{ fill: "transparent" }} />
-                  <Bar dataKey="risk" fill="#f43f5e" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+          {/* Section: AI Suggested Alternatives */}
+          <div className="p-6 border-b border-slate-100 bg-emerald-50/30">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-4 flex items-center">
+               <ShieldAlert className="w-3 h-3 mr-2" /> AI Suggested Alternatives
+            </h2>
+            <div className="space-y-3">
+               <button 
+                 onClick={() => onSelectAlt?.(null)}
+                 className={`w-full p-4 rounded-xl border text-left transition-all ${!selectedAltId ? 'border-rose-500 bg-rose-50 ring-2 ring-rose-200' : 'border-slate-200 bg-white opacity-60 hover:opacity-100'}`}
+               >
+                 <div className="flex justify-between items-start mb-1">
+                    <span className="font-bold text-sm">Proposed Alignment (Original)</span>
+                    <span className="text-xs font-black text-rose-600">{result.primary_impact_score} Impact</span>
+                 </div>
+                 <p className="text-[10px] text-slate-500">The current manually drawn trajectory.</p>
+               </button>
+
+               {result.alternatives.map((alt: any) => (
+                 <button 
+                   key={alt.id}
+                   onClick={() => onSelectAlt?.(alt.id)}
+                   className={`w-full p-4 rounded-xl border text-left transition-all ${selectedAltId === alt.id ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200' : 'border-slate-200 bg-white hover:border-emerald-300'}`}
+                 >
+                   <div className="flex justify-between items-start mb-1">
+                      <span className="font-bold text-sm text-slate-800">{alt.name}</span>
+                      <span className="text-xs font-black text-emerald-600">{alt.impact_score} Impact</span>
+                   </div>
+                   <p className="text-[10px] text-slate-600 mb-2">{alt.description}</p>
+                   <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      Cost Index: +{alt.cost_increase}%
+                   </div>
+                 </button>
+               ))}
             </div>
           </div>
 
-          {/* Section D: Smart Recommendation */}
-          <div className="p-6 bg-amber-50/50">
-            <div className="bg-white border border-amber-200 rounded-lg p-4 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-amber-400" />
-              <div className="flex space-x-3">
-                <AlertTriangle className="text-amber-500 shrink-0 w-5 h-5" />
-                <div>
-                  <h3 className="text-sm font-bold text-slate-800 mb-1">AI Recommendation</h3>
-                  <p className="text-xs leading-relaxed text-slate-600">
-                    Proposed alignment intersects a high-density elephant migration habitat.
-                    Consider shifting the alignment <strong>2km South</strong> or allocating budget for a <strong>Wildlife Underpass</strong> at Segment 2 and 4.
-                  </p>
-                </div>
-              </div>
-            </div>
+          <div className="p-6 bg-slate-50">
+             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">Segment Risk Distribution</h2>
+             <div className="h-32 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={mockChartData}>
+                    <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
+                    <YAxis fontSize={10} axisLine={false} tickLine={false} />
+                    <Tooltip cursor={{ fill: "transparent" }} />
+                    <Bar dataKey="risk" fill={selectedAltId ? "#10b981" : "#f43f5e"} radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+             </div>
           </div>
         </>
       )}

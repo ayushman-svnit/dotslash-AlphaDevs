@@ -14,6 +14,8 @@ interface MapAreaProps {
   roadPoints: Point[];
   onAddRoadPoint: (point: Point) => void;
   analysisState: "idle" | "loading" | "complete";
+  alternatives?: any[];
+  selectedAltId?: string | null;
 }
 
 // Leaflet requires window, so we must disable SSR for this component
@@ -27,10 +29,10 @@ const LeafletMap = dynamic(() => import("./LeafletMap"), {
   ),
 });
 
-export function MapArea(props: MapAreaProps) {
+export function MapArea({ alternatives, selectedAltId, ...props }: MapAreaProps) {
   return (
     <div className="flex-1 relative z-0">
-      <LeafletMap {...props} />
+      <LeafletMap alternatives={alternatives} selectedAltId={selectedAltId} {...props} />
       
       {/* Contextual instruction tooltip */}
       {props.selectedRegion && props.analysisState === "idle" && props.roadPoints.length === 0 && (
