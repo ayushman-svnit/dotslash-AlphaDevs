@@ -28,3 +28,6 @@ infra/mcp/*.json
 
 # Docker
 .docker/
+
+# Secret Keys
+*-firebase-adminsdk-*.json

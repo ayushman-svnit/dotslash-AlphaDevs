@@ -1,22 +1,53 @@
 services:
+  # 🗄️ Relational + Spatial DB (Crucial for Wildlife Zones and Map Routing)
+  postgres:
+    image: postgis/postgis:15-3.3
+    container_name: ecoroute_postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ecoroute_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ecoroute_pg_data:/var/lib/postgresql/data
+    networks:
+      - ecoroute_network
+
+  # 🚀 Realtime Cache and Queue Backend
   redis:
     image: redis:alpine
-    container_name: redis_stack
+    container_name: ecoroute_redis
     ports:
       - "6379:6379"
     networks:
-      - hackathon_network
+      - ecoroute_network
 
   redis-insight:
     image: redislabs/redisinsight:latest
-    container_name: redis_insight
+    container_name: ecoroute_redis_insight
     ports:
       - "8001:8001"
     depends_on:
       - redis
     networks:
-      - hackathon_network
+      - ecoroute_network
+
+  # 🧠 Local Vector DB for RAG & Embeddings
+  qdrant:
+    image: qdrant/qdrant
+    container_name: ecoroute_qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      - ecoroute_qdrant_data:/qdrant/storage
+    networks:
+      - ecoroute_network
+
+volumes:
+  ecoroute_pg_data:
+  ecoroute_qdrant_data:
 
 networks:
-  hackathon_network:
+  ecoroute_network:
     driver: bridge
