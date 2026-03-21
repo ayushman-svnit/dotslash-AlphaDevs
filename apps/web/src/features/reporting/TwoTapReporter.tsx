@@ -129,6 +129,9 @@ export const TwoTapReporter = ({ userId = 'user-123' }: { userId?: string }) => 
       if (data.status === 'Verified (AI)') {
         setStatus('verified');
         setStatusMsg(`AI Verified! Officer has been notified via SMS.`);
+      } else if (data.status === 'Verified (Existing)') {
+        setStatus('verified');
+        setStatusMsg(data.message || 'Already verified in this area. Notification previously sent.');
       } else {
         setStatus('unverified');
         setStatusMsg(`Report received. AI confidence: ${(data.ai_confidence * 100).toFixed(0)}%`);

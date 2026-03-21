@@ -13,26 +13,23 @@ async def send_officer_sighting_alert(officer_phone: str, animal: str, lat: floa
         return False
 
     url = f"https://api.twilio.com/2010-04-01/Accounts/{settings.TWILIO_ACCOUNT_SID}/Messages.json"
-    maps_link = f"https://maps.google.com/?q={lat},{lng}"
+    
+    # To fit BOTH URLs inside 122 characters (Trial Segment Limit):
+    # 1. No Emojis (Forces UCS-2 encoding -> 70 char limit)
+    # 2. Strip "https://" from Maps Link (phones auto-resolve it) to save 8 characters
+    # 3. Super brief labels (L: = Location, P: = Photo)
+    animal_short = animal.upper()[:8]
+    map_short = f"maps.google.com/?q={lat},{lng}"
+    
+    # Format: ECO:ELEPHANT L:maps.google.com/?q=10.05,76.67 P:http://img.url
+    message = f"ECO:{animal_short} L:{map_short} P:{image_url}"
 
-    message = (
-        f"🚨 WILDLIFE ALERT — ECO-ROUTE AI 🚨\n"
-        f"Animal: {animal.upper()} (AI Verified)\n\n"
-        f"📍 Location: {maps_link}\n"
-        f"🗒 Situation: {description}\n"
-        f"📸 Photo: {image_url}\n\n"
-        f"⚡ Deploy corridor protection team immediately."
-    )
     
     data = {
         "From": settings.TWILIO_PHONE_NUMBER,
         "To": officer_phone,
         "Body": message
     }
-    
-    # Optional: MediaUrl support for Twilio MMS
-    if image_url:
-        data["MediaUrl"] = image_url
 
     try:
         async with httpx.AsyncClient() as client:
@@ -43,10 +40,12 @@ async def send_officer_sighting_alert(officer_phone: str, animal: str, lat: floa
             )
             
             if response.status_code in [200, 201]:
-                logger.info(f"Twilio alert sent to officer {officer_phone}")
+                logger.info(f"🚀 Twilio alert sent to officer {officer_phone} successfully.")
                 return True
             else:
-                logger.error(f"Twilio failure: {response.text}")
+                resp_data = response.json()
+                error_msg = resp_data.get("message", response.text)
+                logger.error(f"❌ Twilio Error {response.status_code}: {error_msg}")
                 return False
     except Exception as e:
         logger.error(f"Twilio connectivity fail: {e}")
