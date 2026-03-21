@@ -4,8 +4,13 @@ import { AuthProvider } from '@/context/AuthContext'
 import React from 'react'
 
 export const metadata: Metadata = {
-  title: 'Hackathon Starter',
-  description: 'Built with Next.js + FastAPI + Redis',
+  title: 'ECO-ROUTE AI | Intelligence Platform',
+  description: 'Intelligent Ecological Route Planning & Forest Monitoring',
+  manifest: '/manifest.json',
+}
+
+export const viewport = {
+  themeColor: "#1a2f23",
 }
 
 export default function RootLayout({
