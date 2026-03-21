@@ -7,3 +7,8 @@ python-multipart
 python-jose[cryptography]
 passlib[bcrypt]
 supabase
+networkx
+osmnx
+h3
+protobuf
+websockets

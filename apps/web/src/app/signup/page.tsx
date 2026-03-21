@@ -15,9 +15,13 @@ const SignupForm = () => {
   const searchParams = useSearchParams();
   const role = searchParams.get('role') || 'citizen';
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setError(null);
+    setIsSubmitting(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, {
@@ -26,6 +30,7 @@ const SignupForm = () => {
       router.push(`/login?role=${role}&message=Account created successfully`);
     } catch (err: any) {
       setError(err.message || 'Failed to create account');
+      setIsSubmitting(false);
     }
   };
 
@@ -56,8 +61,8 @@ const SignupForm = () => {
         className="block w-full mb-6 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
         required
       />
-      <button type="submit" className="w-full bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition">
-        Create {role.charAt(0).toUpperCase() + role.slice(1)} Account
+      <button disabled={isSubmitting} type="submit" className="w-full bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700 transition disabled:opacity-50">
+        {isSubmitting ? 'Creating...' : `Create ${role.charAt(0).toUpperCase() + role.slice(1)} Account`}
       </button>
     </form>
   );

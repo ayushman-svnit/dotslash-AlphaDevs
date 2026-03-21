@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+// Defining the Protobuf schema for the alerts payload
+// Compiling this schema yields binary serialization for sub-second delivery.
+
+message WildlifeAlert {
+  double lat = 1;
+  double lng = 2;
+  string species_id = 3;
+  string urgency_level = 4; // e.g. "Critical", "Moderate"
+  int32 time_to_collision_sec = 5;
+  string location_h3_index = 6;
+}
