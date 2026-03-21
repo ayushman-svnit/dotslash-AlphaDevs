@@ -42,7 +42,7 @@ export async function POST(req: Request) {
                         method: "POST",
                         headers: { "x-api-key": gfwKey, "Content-Type": "application/json" },
                         body: JSON.stringify({
-                            sql: "SELECT sum(area__ha) FROM results WHERE umd_tree_cover_density_2000__threshold=5",
+                            sql: "SELECT sum(area__ha) FROM results WHERE umd_tree_cover_density_2000__percent >= 30",
                             geometry: gfwGeometry
                         })
                     }
