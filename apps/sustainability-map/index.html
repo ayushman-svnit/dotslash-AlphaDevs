@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deforestation Impact Analyzer</title>
+    <!-- Google Fonts for Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <!-- Leaflet Draw CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- UI Overlay (Glassmorphism) -->
+    <div id="ui-overlay" class="glass-panel">
+      <header>
+        <h1>ForestGuard AI</h1>
+        <p>Deforestation Impact & Sustainability Analyzer</p>
+      </header>
+
+      <div class="api-key-section">
+        <label for="gfw-key">Global Forest Watch API Key 
+          <span class="tooltip-icon" title="Required to fetch high-resolution forest loss data. Get it by signing up at data-api.globalforestwatch.org">ⓘ</span>
+        </label>
+        <div class="input-group">
+          <input type="password" id="gfw-key" placeholder="Enter your GFW API Key..." />
+          <button id="save-key-btn" class="btn primary">Save</button>
+        </div>
+        <small id="key-status-msg" class="status-msg text-fade">No key provided. Map analysis disabled.</small>
+      </div>
+
+      <div class="instructions">
+        <h3>How to use:</h3>
+        <ul>
+          <li><strong>Point Check:</strong> Click anywhere on the map to analyze a 5km radius.</li>
+          <li><strong>Region Check:</strong> Use the ⬜ tool on the map to draw a 4-point bounding box for a road or construction zone.</li>
+        </ul>
+      </div>
+
+      <div id="results-panel" class="results-panel hidden">
+        <h3>Analysis Results</h3>
+        <div class="result-card">
+          <div class="score-ring">
+            <svg viewBox="0 0 36 36" class="circular-chart">
+              <path class="circle-bg"
+                d="M18 2.0845
+                  a 15.9155 15.9155 0 0 1 0 31.831
+                  a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+              <path class="circle" id="score-circle"
+                stroke-dasharray="0, 100"
+                d="M18 2.0845
+                  a 15.9155 15.9155 0 0 1 0 31.831
+                  a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+              <text x="18" y="20.35" class="percentage" id="score-text">0</text>
+            </svg>
+            <span class="score-label">Safety Score</span>
+          </div>
+          
+          <div class="details">
+            <div id="status-badge" class="badge">PENDING</div>
+            <ul id="reasons-list" class="reasons-list">
+              <li>Awaiting interaction...</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div id="loading-overlay" class="loading hidden">
+        <div class="spinner"></div>
+        <p>Analyzing area...</p>
+      </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <!-- Leaflet Draw JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

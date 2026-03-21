@@ -1,16 +1,16 @@
 "use client";
 
-import { Leaf, RefreshCcw, Activity } from "lucide-react";
+import { Leaf, RefreshCcw, Activity, MapPin } from "lucide-react";
 import clsx from "clsx";
 
 interface TopBarProps {
-  selectedRegion: string | null;
   roadDrawn: boolean;
+  pointCount: number;
   onReset: () => void;
   onAnalyse: () => void;
 }
 
-export function TopBar({ selectedRegion, roadDrawn, onReset, onAnalyse }: TopBarProps) {
+export function TopBar({ roadDrawn, pointCount, onReset, onAnalyse }: TopBarProps) {
   return (
     <div className="h-20 w-full bg-[#166534] text-white flex items-center justify-between px-8 shadow-[0_4px_30px_rgba(0,0,0,0.3)] z-50 flex-shrink-0 relative overflow-hidden">
       {/* Decorative SVG curve in top bar */}
@@ -29,11 +29,14 @@ export function TopBar({ selectedRegion, roadDrawn, onReset, onAnalyse }: TopBar
           <p className="text-[10px] font-black tracking-[0.3em] text-green-400 mt-1 uppercase opacity-80">Authority Intelligence</p>
         </div>
         <div className="w-px h-8 bg-white/10 mx-4" />
-        <div className="flex flex-col">
-           <span className="text-[10px] font-black uppercase tracking-widest text-green-300 opacity-60">Selected Region</span>
-           <span className="text-sm font-bold truncate max-w-[200px]">
-             {selectedRegion || "None"}
-           </span>
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4 text-green-300 opacity-70" />
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black uppercase tracking-widest text-green-300 opacity-60">Road Points</span>
+            <span className="text-sm font-bold">
+              {pointCount === 0 ? "None — click the map" : `${pointCount} point${pointCount > 1 ? "s" : ""} drawn`}
+            </span>
+          </div>
         </div>
       </div>
 

@@ -4,7 +4,6 @@ import { ShieldAlert, Map, AlertTriangle, Activity } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 interface LeftPanelProps {
-  selectedRegion: string | null;
   analysisState: "idle" | "loading" | "complete";
   result?: any;
   selectedAltId?: string | null;
@@ -19,13 +18,12 @@ const mockChartData = [
 ];
 
 export function LeftPanel({ 
-  selectedRegion, 
   analysisState, 
   result, 
   selectedAltId, 
   onSelectAlt 
 }: LeftPanelProps) {
-  if (!selectedRegion) {
+  if (analysisState === "idle") {
     return (
       <div className="w-[420px] bg-[#f5f2e9] border-r-2 border-green-900/10 p-10 flex flex-col items-center justify-center text-center relative overflow-hidden">
         {/* Abstract background elements */}
@@ -37,9 +35,9 @@ export function LeftPanel({
              <Map className="w-12 h-12 text-[#166534]" />
           </div>
           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#166534]/40 mb-3">Intelligence Hub</p>
-          <h2 className="text-3xl font-black text-[#166534] tracking-tighter uppercase leading-none">Select<br />A Region</h2>
+          <h2 className="text-3xl font-black text-[#166534] tracking-tighter uppercase leading-none">Click the<br />Map</h2>
           <p className="text-sm text-slate-500 mt-6 font-medium leading-relaxed max-w-[240px]">
-            Target a marked corridor zone on the interface to initiate environmental impact diagnostics.
+            Click anywhere in India to drop road waypoints. Then hit Analyse Impact to run sustainability diagnostics.
           </p>
         </div>
       </div>
@@ -107,9 +105,23 @@ export function LeftPanel({
             </div>
 
             <div className="space-y-4">
-              <div className="bg-white/60 p-5 rounded-2xl border border-white flex justify-between items-center shadow-sm">
-                 <span className="text-xs font-black uppercase tracking-widest text-[#166534]">Affected Species</span>
-                 <span className="text-xs font-bold text-rose-600 bg-rose-50 px-3 py-1 rounded-full border border-rose-100">{result.affected_species?.join(", ") || "None"}</span>
+              <div className="bg-white/60 p-5 rounded-2xl border border-white shadow-sm">
+                 <span className="text-xs font-black uppercase tracking-widest text-[#166534] block mb-3">
+                   Affected Species ({result.affected_species?.length || 0})
+                 </span>
+                 {result.affected_species?.length > 0 ? (
+                   <div className="flex flex-wrap gap-2">
+                     {result.affected_species.map((species: string, i: number) => (
+                       <span key={i} className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-100 italic">
+                         {species}
+                       </span>
+                     ))}
+                   </div>
+                 ) : (
+                   <span className="text-xs text-green-600 font-bold bg-green-50 px-3 py-1 rounded-full border border-green-100">
+                     ✓ No endangered species detected
+                   </span>
+                 )}
               </div>
             </div>
           </div>

@@ -9,8 +9,6 @@ interface Point {
 }
 
 interface MapAreaProps {
-  selectedRegion: string | null;
-  onSelectRegion: (region: string) => void;
   roadPoints: Point[];
   onAddRoadPoint: (point: Point) => void;
   analysisState: "idle" | "loading" | "complete";
@@ -18,7 +16,6 @@ interface MapAreaProps {
   selectedAltId?: string | null;
 }
 
-// Leaflet requires window, so we must disable SSR for this component
 const LeafletMap = dynamic(() => import("./LeafletMap"), {
   ssr: false,
   loading: () => (
@@ -33,11 +30,11 @@ export function MapArea({ alternatives, selectedAltId, ...props }: MapAreaProps)
   return (
     <div className="flex-1 relative z-0">
       <LeafletMap alternatives={alternatives} selectedAltId={selectedAltId} {...props} />
-      
+
       {/* Contextual instruction tooltip */}
-      {props.selectedRegion && props.analysisState === "idle" && props.roadPoints.length === 0 && (
+      {props.analysisState === "idle" && props.roadPoints.length === 0 && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-full text-sm font-medium shadow-xl pointer-events-none animate-bounce z-[999]">
-          Click inside the map to draw your proposed road alignment.
+          Click anywhere on India to draw your proposed road alignment.
         </div>
       )}
     </div>

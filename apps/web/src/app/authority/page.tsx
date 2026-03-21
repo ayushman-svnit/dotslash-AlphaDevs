@@ -22,7 +22,6 @@ const MapArea = dynamic(() => import("@/features/authority/components/MapArea").
 export default function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [roadPoints, setRoadPoints] = useState<{ lat: number, lng: number }[]>([]);
   const [analysisState, setAnalysisState] = useState<"idle" | "loading" | "complete">("idle");
   const [analysisResult, setAnalysisResult] = useState<any>(null);
@@ -33,7 +32,7 @@ export default function DashboardPage() {
       if (!user) {
         router.push("/login");
       } else if (user.role !== "AUTHORITY") {
-        router.push("/citizen"); // Fallback for wrong role
+        router.push("/citizen");
       }
     }
   }, [user, loading, router]);
@@ -43,7 +42,6 @@ export default function DashboardPage() {
   }
 
   const handleReset = () => {
-    setSelectedRegion(null);
     setRoadPoints([]);
     setAnalysisState("idle");
     setAnalysisResult(null);
@@ -53,16 +51,33 @@ export default function DashboardPage() {
   const handleAnalyse = async () => {
     setAnalysisState("loading");
     try {
-      const response = await fetch("http://localhost:8000/api/v1/authority/road-planning", {
+      if (roadPoints.length === 0) {
+        alert("Please click the map to draw at least one point to analyze!");
+        setAnalysisState("idle");
+        return;
+      }
+
+      console.log(`[Analysis] ${roadPoints.length} point(s) — sending to server-side API route`);
+
+      // All external API calls (GFW, GBIF) happen server-side in the Next.js route
+      // to avoid CORS blocks and ERR_CONNECTION_CLOSED from the browser.
+      const res = await fetch("/api/authority/road-planning", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          points: roadPoints.map(p => [p.lat, p.lng]),
-          zone_id: selectedRegion
+          points: roadPoints.map(pt => [pt.lat, pt.lng])
         })
       });
-      const data = await response.json();
-      setAnalysisResult(data);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `API error ${res.status}`);
+      }
+
+      const result = await res.json();
+      console.log(`[Analysis] Result:`, result);
+
+      setAnalysisResult(result);
       setAnalysisState("complete");
     } catch (error) {
       console.error("Analysis failed:", error);
@@ -72,16 +87,15 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col h-screen w-full bg-[#f5f2e9] font-sans">
-      <TopBar 
-        selectedRegion={selectedRegion}
-        roadDrawn={roadPoints.length > 1}
+      <TopBar
+        roadDrawn={roadPoints.length > 0}
+        pointCount={roadPoints.length}
         onReset={handleReset}
         onAnalyse={handleAnalyse}
       />
-      
+
       <div className="flex flex-1 overflow-hidden relative">
-        <LeftPanel 
-          selectedRegion={selectedRegion}
+        <LeftPanel
           analysisState={analysisState}
           result={analysisResult}
           selectedAltId={selectedAltId}
@@ -89,14 +103,7 @@ export default function DashboardPage() {
         />
         <div className="flex-1 relative p-4 md:p-8">
            <div className="w-full h-full rounded-[3rem] overflow-hidden border-4 border-[#166534] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)] bg-white flex flex-col relative">
-              <MapArea 
-                selectedRegion={selectedRegion}
-                onSelectRegion={(region) => {
-                  if (analysisState === "idle") {
-                      setSelectedRegion(region);
-                      setRoadPoints([]); 
-                  }
-                }}
+              <MapArea
                 roadPoints={roadPoints}
                 onAddRoadPoint={(point) => {
                   if (analysisState === "idle") setRoadPoints(prev => [...prev, point]);
@@ -108,7 +115,7 @@ export default function DashboardPage() {
            </div>
         </div>
       </div>
-      
+
       <LegendBar />
     </div>
   );
