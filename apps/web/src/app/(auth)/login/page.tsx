@@ -3,16 +3,18 @@
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
-import { useRouter } from "next/navigation";
-import { Leaf, Lock, Mail, AlertCircle } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Leaf, Lock, Mail, AlertCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,14 +22,19 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // Mock role-based routing logic
-      if (email.includes("officer")) {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      const displayName = userCredential.user.displayName || "";
+      const [, roleStr] = displayName.split("|");
+      const role = (roleStr || "CITIZEN").toUpperCase();
+
+      // Role-based routing logic strictly using the user schema
+      if (role === "OFFICER") {
         router.push("/officer");
-      } else if (email.includes("citizen")) {
-        router.push("/citizen");
-      } else {
+      } else if (role === "AUTHORITY") {
         router.push("/authority");
+      } else {
+        router.push("/citizen");
       }
     } catch (err: any) {
       setError(err.message || "Failed to login. Please check your credentials.");
@@ -107,5 +114,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin w-8 h-8 text-emerald-600" /></div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

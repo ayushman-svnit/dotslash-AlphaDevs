@@ -25,7 +25,7 @@ async def send_officer_sighting_alert(officer_phone: str, animal: str, lat: floa
     )
     
     data = {
-        "From": settings.TWILIO_FROM_NUMBER,
+        "From": settings.TWILIO_PHONE_NUMBER,
         "To": officer_phone,
         "Body": message
     }
