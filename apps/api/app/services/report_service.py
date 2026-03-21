@@ -26,26 +26,8 @@ async def process_citizen_report(report: CitizenReportCreate) -> Dict[str, Any]:
     If confidence > 0.8, promotes the alert to 'Verified (AI)'.
     Prevents redundant verification if a verified risk already exists.
     """
-    # 0. Check for Re-verification (The 'One Time Verify It' Logic)
-    try:
-        h3_index = h3.latlng_to_cell(report.lat, report.lng, 9)
-        key = f"risk:{h3_index}:{report.species_id}"
-        
-        existing_risk = await redis_service.get(key)
-        if existing_risk:
-            import json
-            # risk_data = json.loads(existing_risk) if isinstance(existing_risk, str) else existing_risk
-            logger.info(f"Redundant Report: {report.species_id} already verified at {h3_index}. Skipping SMS and AI.")
-            return {
-                "status": "Verified (Existing)",
-                "ai_label": report.species_id,
-                "ai_confidence": 1.0,
-                "h3_index": h3_index,
-                "message": "This animal was recently verified by another user in your area. Notification already sent."
-            }
-    except Exception as e:
-        logger.warning(f"Metadata lookup failed (Redis potentially down): {e}. Proceeding with standard verification.")
-
+    # The "One-Time Verify" (Redis caching) logic has been disabled per request.
+    # Every report will now process through the AI and trigger an SMS.
     # 1. AI Verification
     image_to_verify = report.image_url if report.image_url else "https://images.unsplash.com/photo-1557050543-4d5f4e07ef46"
     ai_result = await detect_animal_in_image(image_to_verify)
@@ -54,12 +36,18 @@ async def process_citizen_report(report: CitizenReportCreate) -> Dict[str, Any]:
     label = prediction.get("label", report.species_id)
     confidence = prediction.get("confidence", 0.0)
     
-    # 2. Decision Logic (Confidence Threshold lowered from 0.8 -> 0.3 for demo stability)
+    # 2. Decision Logic
+    # We trigger the alert if the AI confidence is >= 0.3 OR if the AI API completely crashed
+    api_status = ai_result.get("status", "error")
     status = "Unverified"
-    if confidence >= 0.3:
-        status = "Verified (AI)"
-        
-        logger.info(f"AI Verification Success: {label} ({confidence*100}%). Triggering multi-stakeholder notification.")
+    
+    if confidence >= 0.3 or api_status == "error":
+        if api_status == "error":
+            status = "Verified (Fallback)"
+            logger.warning(f"AI Vision Failed! Defaulting to trust Citizen. Triggering emergency SMS for {label}.")
+        else:
+            status = "Verified (AI)"
+            logger.info(f"AI Verification Success: {label} ({confidence*100}%). Triggering notification.")
 
         # 3. High-Risk Alert Activation
         await register_active_risk(
@@ -83,9 +71,9 @@ async def process_citizen_report(report: CitizenReportCreate) -> Dict[str, Any]:
         )
         
         if sms_sent:
-            logger.info(f"🚀 SUCCESS: Report promoted to AI-VERIFIED and SMS delivered to {officer_phone}")
+            logger.info(f"🚀 SUCCESS: Report promoted and SMS delivered to {officer_phone}")
         else:
-            logger.error("⚠️ FAILURE: AI Verified but Twilio SMS failed to send. Check SID/Token.")
+            logger.error("⚠️ FAILURE: SMS failed to send. Check SID/Token.")
     else:
         logger.warning(f"AI Verification too low for {label}: {confidence*100}%. Minimum threshold is 30%.")
 

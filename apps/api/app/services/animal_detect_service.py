@@ -7,8 +7,11 @@ logger = logging.getLogger(__name__)
 
 async def detect_animal_in_image(image_url: str) -> Dict[str, Any]:
     """
-    Connects to LIVE AnimalDetect.com API to verify the image.
+    Connects to the visual recognition API.
+    If it fails, it returns an error status safely so the Emergency SMS protocol handles it.
     """
+    logger.info(f"Initiating LIVE AI Visual Scan on: {image_url}")
+    
     try:
         headers = {
             "Authorization": f"Bearer {settings.ANIMAL_DETECT_API_KEY}",
@@ -25,11 +28,11 @@ async def detect_animal_in_image(image_url: str) -> Dict[str, Any]:
                 settings.ANIMAL_DETECT_API_URL, 
                 json=payload, 
                 headers=headers,
-                timeout=10.0
+                timeout=5.0
             )
             
             if response.status_code != 200:
-                logger.error(f"AnimalDetect Error: {response.text}")
+                logger.error(f"AnimalDetect Error/404: {response.text}")
                 return {"status": "error", "prediction": {}}
 
             data = response.json()
@@ -42,7 +45,7 @@ async def detect_animal_in_image(image_url: str) -> Dict[str, Any]:
                 }
 
             # Extract the top prediction
-            top_prediction = annotations[0] # assuming sorted by confidence
+            top_prediction = annotations[0]
             return {
                 "status": "success",
                 "prediction": {
@@ -53,14 +56,5 @@ async def detect_animal_in_image(image_url: str) -> Dict[str, Any]:
             }
 
     except Exception as e:
-        logger.error(f"AnimalDetect AI Critical Failure: {e}. Falling back to ML-MOCK for demo stability.")
-        # MOCK FALLBACK: Return a high-confidence success to allow the flow to continue
-        return {
-            "status": "success",
-            "prediction": {
-                "label": "Elephant", # Generic fallback
-                "confidence": 0.92,
-                "verified": True,
-                "is_mock": True
-            }
-        }
+        logger.error(f"Vision Engine Connectivity Failure: {e}")
+        return {"status": "error", "prediction": {}}

@@ -19,29 +19,29 @@ async def test_verification():
     print("\n--- Sending Report 1 (Verified AI Expected) ---")
     try:
         async with httpx.AsyncClient() as client:
-            resp1 = await client.post(report_url, json=report1, timeout=10.0)
+            resp1 = await client.post(report_url, json=report1, timeout=15.0)
             print(f"Response 1 Code: {resp1.status_code}")
             print(f"Response 1 Body: {resp1.text}")
     except Exception as e:
-        print(f"Error Report 1: {e}")
+        print(f"Error Report 1:\n{repr(e)}")
 
-    # Report 2 for the same thing
+    # Report 2
     report2 = {
         "user_id": "test-user-2",
-        "lat": 10.051, # slightly different but same H3 index
+        "lat": 10.051,
         "lng": 76.671,
         "species_id": "Elephant",
         "description": "Integration Test Sighting 2"
     }
     
-    print("\n--- Sending Report 2 (Verified Existing Expected) ---")
+    print("\n--- Sending Report 2 (Verified AI Expected) ---")
     try:
         async with httpx.AsyncClient() as client:
-            resp2 = await client.post(report_url, json=report2, timeout=10.0)
+            resp2 = await client.post(report_url, json=report2, timeout=30.0)
             print(f"Response 2 Code: {resp2.status_code}")
             print(f"Response 2 Body: {resp2.text}")
     except Exception as e:
-        print(f"Error Report 2: {e}")
+        print(f"Error Report 2:\n{repr(e)}")
 
 if __name__ == "__main__":
     asyncio.run(test_verification())
