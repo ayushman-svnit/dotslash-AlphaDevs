@@ -1,17 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TopBar } from "@/features/authority/components/TopBar";
 import { LeftPanel } from "@/features/authority/components/LeftPanel";
 import { MapArea } from "@/features/authority/components/MapArea";
 import { LegendBar } from "@/features/authority/components/LegendBar";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [roadPoints, setRoadPoints] = useState<{ lat: number, lng: number }[]>([]);
   const [analysisState, setAnalysisState] = useState<"idle" | "loading" | "complete">("idle");
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [selectedAltId, setSelectedAltId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        router.push("/login");
+      } else if (user.role !== "AUTHORITY") {
+        router.push("/citizen"); // Fallback for wrong role
+      }
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user || user.role !== "AUTHORITY") {
+    return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 text-slate-500 font-medium">Loading Authority Intelligence...</div>;
+  }
 
   const handleReset = () => {
     setSelectedRegion(null);

@@ -9,12 +9,13 @@ export default function CitizenPage() {
   const { user, loading, signOut } = useAuth();
   const router = useRouter();
 
-  if (loading) return <div className="p-8">Loading...</div>;
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
 
-  if (!user) {
-    router.push('/login?role=citizen');
-    return null;
-  }
+  if (loading || !user) return <div className="p-8 h-screen w-screen flex items-center justify-center bg-emerald-50 text-emerald-800">Loading Citizen Dashboard...</div>;
 
   return (
     <div className="min-h-screen bg-amber-50 flex flex-col">

@@ -15,39 +15,40 @@ export default function Home() {
           Empowering governments to plan sustainably, forest officers to protect wildlife efficiently, and citizens to travel safely and responsibly.
         </p>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 text-left">
-          {/* Authority Card */}
-          <div className="p-6 border-2 border-slate-200 hover:border-blue-500 rounded-2xl bg-slate-50 transition drop-shadow-sm">
-            <h3 className="text-xl font-bold mb-3 text-blue-900">🏛️ Policy Makers</h3>
-            <p className="text-sm text-gray-600 mb-4 h-20">Access corridor intelligence, track deforestation, and use AI to evaluate the impact of new roads before they are built.</p>
-            <Link href="/login?role=authority" className="block text-center w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
-              Authority Login
+        <div className="flex flex-col items-center gap-6 mb-12">
+          <p className="text-lg text-gray-500 max-w-xl italic">
+            "A unified platform for conservation governance, field protection, and citizen safety."
+          </p>
+          
+          <div className="flex flex-wrap justify-center gap-4 mt-4">
+            <Link 
+              href="/login" 
+              className="px-10 py-4 bg-[#1e3a29] text-white rounded-full font-bold text-lg hover:bg-emerald-800 transition shadow-xl hover:scale-105 transform transition-all"
+            >
+              Sign In to Platform
             </Link>
-          </div>
-
-          {/* Officer Card */}
-          <div className="p-6 border-2 border-emerald-200 hover:border-emerald-500 rounded-2xl bg-emerald-50 transition drop-shadow-sm">
-            <h3 className="text-xl font-bold mb-3 text-emerald-900">🌲 Forest Officers</h3>
-            <p className="text-sm text-gray-600 mb-4 h-20">View real-time movement heatmaps, manage roadkill alerts, and respond to citizen reports to protect wildlife in the field.</p>
-            <Link href="/login?role=officer" className="block text-center w-full px-4 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition">
-              Ranger Login
-            </Link>
-          </div>
-
-          {/* Citizen Card */}
-          <div className="p-6 border-2 border-amber-200 hover:border-amber-500 rounded-2xl bg-amber-50 transition drop-shadow-sm">
-            <h3 className="text-xl font-bold mb-3 text-amber-900">🚗 Citizens</h3>
-            <p className="text-sm text-gray-600 mb-4 h-20">Navigate using eco-safe mapping, receive crossing alerts, and instantly report animal sightings to help conservation efforts.</p>
-            <Link href="/login?role=citizen" className="block text-center w-full px-4 py-2 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 transition">
-              Citizen Login
+            <Link 
+              href="/signup" 
+              className="px-10 py-4 bg-white text-emerald-900 border-2 border-emerald-100 rounded-full font-bold text-lg hover:bg-emerald-50 transition shadow-lg hover:scale-105 transform transition-all"
+            >
+              Create Account
             </Link>
           </div>
         </div>
 
-        <div className="flex gap-4 justify-center mt-6">
-          <Link href="/signup" className="px-8 py-3 bg-gray-900 text-white rounded-full font-semibold hover:bg-gray-800 transition shadow-lg">
-            Create an Account
-          </Link>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-4 text-left">
+          <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+            <h3 className="font-bold text-slate-800 mb-2">🏛️ Authority</h3>
+            <p className="text-xs text-slate-500 leading-relaxed">Strategic road planning and environmental impact analysis using AI.</p>
+          </div>
+          <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+            <h3 className="font-bold text-slate-800 mb-2">🌲 Officers</h3>
+            <p className="text-xs text-slate-500 leading-relaxed">Real-time field intelligence, heatmaps, and crossing alert management.</p>
+          </div>
+          <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+            <h3 className="font-bold text-slate-800 mb-2">🚗 Citizens</h3>
+            <p className="text-xs text-slate-500 leading-relaxed">Eco-safe navigation, real-time alerts, and instant wildlife reporting.</p>
+          </div>
         </div>
       </main>
     </div>
