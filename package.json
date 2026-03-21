@@ -1,0 +1,19 @@
+{
+  "name": "alpha-devs",
+  "version": "1.0.0",
+  "description": "ECO-ROUTE AI: Environmental Intelligence Platform",
+  "main": "index.js",
+  "scripts": {
+    "dev:web": "npm run dev --prefix apps/web",
+    "dev:api": "cd apps/api && py -m uvicorn app.main:app --reload",
+    "dev": "concurrently -n \"WEB,API\" -c \"cyan,green\" \"npm run dev:web\" \"npm run dev:api\"",
+    "install:all": "npm install --prefix apps/web && cd apps/api && pip install -r requirements.txt",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Alpha-Devs Team",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
