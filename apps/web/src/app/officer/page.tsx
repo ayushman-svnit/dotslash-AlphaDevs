@@ -41,12 +41,14 @@ export default function OfficerPage() {
     );
   }
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col bg-white font-sans">
+    <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#f5f2e9] font-sans">
       <OfficerTopBar />
       <div className="flex flex-1 overflow-hidden">
         <OfficerLeftPanel />
-        <div className="flex-1 relative">
-          <OfficerMap />
+        <div className="flex-1 relative p-4 md:p-8">
+           <div className="w-full h-full rounded-[2.5rem] overflow-hidden border-4 border-[#166534] shadow-2xl relative bg-white flex flex-col">
+              <OfficerMap />
+           </div>
         </div>
       </div>
     </div>

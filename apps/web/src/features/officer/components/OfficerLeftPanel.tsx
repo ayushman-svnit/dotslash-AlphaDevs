@@ -31,106 +31,119 @@ export function OfficerLeftPanel() {
   }, []);
 
   if (loading) return (
-    <div className="w-[380px] bg-[#fdfefd] p-10 flex flex-col items-center justify-center space-y-4">
-      <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-      <span className="text-xs font-black text-emerald-800 uppercase tracking-widest">Hydrating Field Intel...</span>
+    <div className="w-[420px] bg-[#f5f2e9] p-12 flex flex-col items-center justify-center space-y-6">
+      <div className="relative">
+         <div className="w-16 h-16 border-4 border-[#166534]/10 rounded-full" />
+         <div className="absolute top-0 left-0 w-16 h-16 border-4 border-[#4ade80] border-t-transparent rounded-full animate-spin" />
+      </div>
+      <span className="text-[10px] font-black text-[#166534] uppercase tracking-[0.3em]">Field Intel Sync...</span>
     </div>
   );
 
   return (
-    <div className="w-[380px] bg-[#fdfefd] border-r border-emerald-100 overflow-y-auto flex flex-col font-sans">
+    <div className="w-[420px] bg-[#f5f2e9] border-r-2 border-green-900/10 overflow-y-auto flex flex-col font-sans dashboard-scrollbar z-40 shadow-2xl">
       
       {/* Service 1: Wildlife Movement Intelligence */}
-      <div className="p-6 border-b border-emerald-50 bg-emerald-50/20">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800/60 mb-5 flex items-center">
-          <TrendingUp className="w-3 h-3 mr-2" /> Movement Intelligence
+      <div className="p-8 border-b border-green-900/5 bg-white/40">
+        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#166534] mb-6 flex items-center gap-3">
+          <div className="w-6 h-6 rounded-lg bg-[#4ade80] flex items-center justify-center text-green-900"><TrendingUp className="w-3.5 h-3.5" /></div>
+          Predictive Tracking
         </h2>
         
         {movement && (
-          <div className="bg-white rounded-2xl p-5 border border-emerald-100 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-black text-slate-500 uppercase">Migration Probability</span>
-              <span className="text-sm font-black text-emerald-600">{(movement.migration_probability * 100).toFixed(0)}%</span>
+          <div className="bg-white rounded-3xl p-6 border-2 border-white shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Migration Prob.</span>
+              <span className="text-lg font-black text-[#166534]">{(movement.migration_probability * 100).toFixed(0)}%</span>
             </div>
-            <div className="w-full h-1.5 bg-emerald-100 rounded-full overflow-hidden mb-4">
+            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-4">
               <div 
-                className="h-full bg-emerald-500 rounded-full transition-all duration-1000" 
+                className="h-full bg-[#4ade80] rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(74,222,128,0.5)]" 
                 style={{ width: `${movement.migration_probability * 100}%` }} 
               />
             </div>
-            <p className="text-[11px] text-slate-600 leading-relaxed">
-              "{movement.description}"
-            </p>
+            <div className="bg-[#166534]/5 p-4 rounded-2xl border border-[#166534]/10 italic">
+               <p className="text-xs text-[#166534] font-bold leading-relaxed">
+                 "{movement.description}"
+               </p>
+            </div>
           </div>
         )}
       </div>
 
       {/* Service 2: Roadkill Prevention Center */}
-      <div className="p-6 border-b border-emerald-50">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-800/60 mb-5 flex items-center">
-          <AlertTriangle className="w-3 h-3 mr-2 text-rose-500" /> Roadkill Prevention
+      <div className="p-8 border-b border-green-900/5">
+        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#166534] mb-6 flex items-center gap-3">
+          <div className="w-6 h-6 rounded-lg bg-rose-500 flex items-center justify-center text-white"><AlertTriangle className="w-3.5 h-3.5" /></div>
+          Critical Alerts
         </h2>
         
         <div className="space-y-4">
           {alerts.map((alert: any) => (
-            <div key={alert.id} className="relative pl-4 border-l-2 border-rose-200">
-               <div className="flex justify-between items-start mb-1">
+            <div key={alert.id} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm relative group hover:border-rose-200 transition-all">
+               <div className="flex justify-between items-start mb-2">
                   <h4 className="text-xs font-black text-slate-800 uppercase tracking-tight">{alert.road_name}</h4>
-                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
+                  <span className={`text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-widest ${
                     alert.risk_level === 'Critical' ? 'bg-rose-600 text-white' : 'bg-amber-100 text-amber-700'
                   }`}>{alert.risk_level}</span>
                </div>
-               <p className="text-[10px] text-slate-500 mb-2">{alert.recommendation}</p>
-               <div className="text-[10px] text-rose-600 font-bold">Risk Probability: {(alert.probability * 100).toFixed(0)}%</div>
+               <p className="text-xs text-slate-500 font-medium mb-3 leading-tight uppercase opacity-80 italic">{alert.recommendation}</p>
+               <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+                  <span className="text-[10px] font-black text-slate-400 uppercase">Detection Prob.</span>
+                  <span className="text-xs font-black text-rose-600">{(alert.probability * 100).toFixed(0)}%</span>
+               </div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Service 3: Citizen Response Center */}
-      <div className="p-6 flex-1">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-800/60 mb-5 flex items-center">
-          <MapPin className="w-3 h-3 mr-2 text-cyan-500" /> Citizen Sightings Feed
+      <div className="p-8 flex-1">
+        <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#166534] mb-6 flex items-center gap-3">
+          <div className="w-6 h-6 rounded-lg bg-cyan-500 flex items-center justify-center text-white"><MapPin className="w-3.5 h-3.5" /></div>
+          Live Sightings
         </h2>
         
-        <div className="space-y-4">
+        <div className="space-y-5">
           {reports.map((report: any) => (
-            <div key={report.id} className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm hover:shadow-md transition-all group">
-               <div className="flex justify-between items-center mb-3">
-                  <div className="flex items-center space-x-2">
-                     <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center font-bold text-slate-400 text-xs uppercase">
+            <div key={report.id} className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
+               <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center gap-3">
+                     <div className="w-10 h-10 rounded-2xl bg-[#166534] text-[#4ade80] flex items-center justify-center font-black text-sm uppercase">
                         {report.species.charAt(0)}
                      </div>
                      <div>
-                        <div className="text-xs font-black text-slate-800">{report.species} Spotted</div>
-                        <div className="text-[9px] text-slate-400 flex items-center"><Clock className="w-2 h-2 mr-1" /> {report.time_ago}</div>
+                        <div className="text-xs font-black text-slate-900 uppercase tracking-tight">{report.species}</div>
+                        <div className="text-[9px] font-black text-slate-400 flex items-center gap-1 uppercase tracking-widest"><Clock className="w-2.5 h-2.5" /> {report.time_ago}</div>
                      </div>
                   </div>
                   {report.verified && (
-                    <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                    <div className="w-6 h-6 rounded-full bg-emerald-50 flex items-center justify-center">
+                       <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    </div>
                   )}
                </div>
                
                {report.image_url && (
-                 <div className="w-full h-24 rounded-lg overflow-hidden mb-3 grayscale group-hover:grayscale-0 transition-all border border-slate-100">
+                 <div className="w-full h-32 rounded-2xl overflow-hidden mb-4 grayscale group-hover:grayscale-0 transition-all border border-slate-50">
                     <img src={report.image_url} alt="sighting" className="w-full h-full object-cover" />
                  </div>
                )}
 
-               <div className="flex items-center justify-between">
-                  <div className="text-[10px] text-slate-500 font-medium flex items-center">
-                     <MapPin className="w-2 h-2 mr-1 text-slate-400" /> Lat {report.lat.toFixed(2)}, Lng {report.lng.toFixed(2)}
+               <div className="flex items-center justify-between pt-2">
+                  <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest flex items-center gap-1.5">
+                     <MapPin className="w-3 h-3 text-[#166534]" /> {report.lat.toFixed(2)}, {report.lng.toFixed(2)}
                   </div>
-                  <button className="text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:underline">Intercept</button>
+                  <button className="text-[10px] font-black text-[#166534] bg-[#4ade80] px-4 py-2 rounded-full uppercase tracking-widest hover:bg-green-300 transition-colors shadow-lg">Intercept</button>
                </div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="p-6 bg-slate-50 mt-auto border-t border-slate-100">
-         <button className="w-full py-4 bg-[#1a2f23] text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-emerald-950 transition-all shadow-xl shadow-emerald-900/20 flex items-center justify-center">
-            <Zap className="w-3 h-3 mr-2 text-emerald-400 animate-pulse" /> Finalize Area Patrol
+      <div className="p-8 bg-white/60 mt-auto border-t border-green-900/5">
+         <button className="w-full py-5 bg-[#166534] text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] hover:bg-green-900 transition-all shadow-[0_15px_30px_rgba(0,0,0,0.2)] flex items-center justify-center gap-3">
+            <Zap className="w-4 h-4 text-[#4ade80] animate-pulse" /> Finalize Patrol Area
          </button>
       </div>
     </div>

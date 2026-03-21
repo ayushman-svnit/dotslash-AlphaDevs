@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { Leaf } from 'lucide-react';
 import { MapComponent } from '@/features/eco-routing/MapComponent';
 import { TwoTapReporter } from '@/features/reporting/TwoTapReporter';
 import { CriticalAlertOverlay } from '@/features/alerts/CriticalAlertOverlay';
@@ -12,26 +13,54 @@ export const CitizenDashboard = () => {
   const userId = user?.uid || 'user-123';
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] overflow-hidden bg-slate-50 flex flex-col md:flex-row">
+    <div className="relative min-h-[calc(100vh-64px)] overflow-hidden bg-[#f5f2e9] flex flex-col md:flex-row">
       <CriticalAlertOverlay userId={userId} />
-      
-      {/* Map View takes up majority of the screen */}
-      <div className="flex-1 h-[60vh] md:h-auto p-4 md:p-8">
-        <MapComponent />
+
+      {/* Map View - Glass Container */}
+      <div className="flex-1 h-[60vh] md:h-auto p-4 md:p-8 relative">
+        <div className="w-full h-full rounded-[2.5rem] overflow-hidden border-4 border-[#166534] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] bg-white relative flex flex-col">
+           <MapComponent />
+           {/* Abstract floating doodles on map interface corners */}
+           <div className="absolute top-6 left-6 pointer-events-none opacity-40">
+             <div className="w-16 h-16 rounded-3xl bg-[#ec4899] rotate-12 shadow-[4px_4px_0px_#052e16]" />
+           </div>
+        </div>
       </div>
 
-      {/* Side panel / Bottom panel for controls */}
-      <div className="w-full md:w-96 bg-white shadow-xl border-l border-slate-200 flex flex-col items-center justify-center p-6 shrink-0 relative z-10">
-        <h2 className="text-2xl font-bold mb-6 text-slate-800 self-start">Control Panel</h2>
-        
-        <TwoTapReporter userId={userId} />
+      {/* Sidebar - Neo-Brutalist Panel */}
+      <div className="w-full md:w-[420px] bg-[#166534] flex flex-col p-8 relative z-10 text-white shadow-[-20px_0_50px_rgba(0,0,0,0.25)]">
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+           <Leaf className="w-32 h-32 rotate-12" />
+        </div>
 
-        <div className="mt-8 p-4 bg-amber-50 rounded-xl text-amber-900 border border-amber-200 text-sm w-full">
-          <p className="font-semibold mb-1">How it works:</p>
-          <ul className="list-disc pl-5 space-y-1 opacity-90">
-            <li>The map displays standard routes minimizing wildlife collision probability.</li>
-            <li>Drive safely! If you exceed 20km/h, the reporter switches to Driver Mode.</li>
-            <li>Alerts will pop up universally if a crossing is detected ahead.</li>
+        <div className="relative z-10 mb-10">
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-green-300 mb-2">Live Controls</p>
+          <h2 className="text-4xl md:text-5xl font-black tracking-tighter leading-none italic uppercase">Control<br /><span className="text-[#4ade80]">Center</span></h2>
+        </div>
+        
+        <div className="bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-white/10 mb-8">
+           <TwoTapReporter userId={userId} />
+        </div>
+
+        <div className="mt-auto bg-[#4ade80] rounded-[2rem] p-6 text-green-950 shadow-[10px_10px_0px_rgba(0,0,0,0.2)]">
+          <h3 className="text-lg font-black uppercase tracking-tight mb-4 flex items-center gap-2">
+            <span className="w-8 h-8 rounded-full bg-green-900/10 flex items-center justify-center font-black">?</span>
+            Protocols
+          </h3>
+          <ul className="space-y-4 font-bold text-sm leading-tight opacity-90">
+            <li className="flex gap-3">
+               <span className="w-2 h-2 rounded-full bg-green-900 mt-1.5 shrink-0" />
+               The map shows routes prioritizing standard migratory trails.
+            </li>
+            <li className="flex gap-3">
+               <span className="w-2 h-2 rounded-full bg-green-900 mt-1.5 shrink-0" />
+               If you exceed 20km/h, Reporter switches to Driver Mode.
+            </li>
+            <li className="flex gap-3">
+               <span className="w-2 h-2 rounded-full bg-green-900 mt-1.5 shrink-0" />
+               Alerts populate in real-time when crossing detected.
+            </li>
           </ul>
         </div>
       </div>

@@ -86,7 +86,7 @@ export const MapComponent = () => {
   }, [start.lat, start.lng, end.lat, end.lng, vehicleMode]);
 
   return (
-    <div className="relative w-full h-[700px] bg-slate-100 rounded-2xl overflow-hidden shadow-2xl border border-slate-200">
+    <div className="relative w-full h-full bg-slate-100 rounded-2xl overflow-hidden shadow-2xl border border-slate-200 outline-none">
       {/* Dynamic Navigation & Simulator Panel */}
       <div className="absolute top-4 left-4 z-10 space-y-4">
         <div className="bg-white/95 backdrop-blur p-5 rounded-2xl shadow-xl border border-slate-200 w-80">

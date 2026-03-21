@@ -3,10 +3,21 @@
 import { useState, useEffect } from "react";
 import { TopBar } from "@/features/authority/components/TopBar";
 import { LeftPanel } from "@/features/authority/components/LeftPanel";
-import { MapArea } from "@/features/authority/components/MapArea";
 import { LegendBar } from "@/features/authority/components/LegendBar";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import { Loader2 } from "lucide-react";
+
+const MapArea = dynamic(() => import("@/features/authority/components/MapArea").then(m => m.MapArea), {
+  ssr: false,
+  loading: () => (
+    <div className="flex-1 flex flex-col items-center justify-center bg-[#f5f2e9] h-full">
+      <Loader2 className="w-8 h-8 animate-spin text-[#166534] mb-4" />
+      <span className="text-[#166534] font-black uppercase tracking-widest text-[10px]">Booting Systems...</span>
+    </div>
+  ),
+});
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -60,7 +71,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="flex flex-col h-screen w-full bg-[#f5f2e9] font-sans">
       <TopBar 
         selectedRegion={selectedRegion}
         roadDrawn={roadPoints.length > 1}
@@ -68,7 +79,7 @@ export default function DashboardPage() {
         onAnalyse={handleAnalyse}
       />
       
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         <LeftPanel 
           selectedRegion={selectedRegion}
           analysisState={analysisState}
@@ -76,22 +87,26 @@ export default function DashboardPage() {
           selectedAltId={selectedAltId}
           onSelectAlt={setSelectedAltId}
         />
-        <MapArea 
-          selectedRegion={selectedRegion}
-          onSelectRegion={(region) => {
-            if (analysisState === "idle") {
-                setSelectedRegion(region);
-                setRoadPoints([]); 
-            }
-          }}
-          roadPoints={roadPoints}
-          onAddRoadPoint={(point) => {
-            if (analysisState === "idle") setRoadPoints(prev => [...prev, point]);
-          }}
-          analysisState={analysisState}
-          alternatives={analysisResult?.alternatives || []}
-          selectedAltId={selectedAltId}
-        />
+        <div className="flex-1 relative p-4 md:p-8">
+           <div className="w-full h-full rounded-[3rem] overflow-hidden border-4 border-[#166534] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)] bg-white flex flex-col relative">
+              <MapArea 
+                selectedRegion={selectedRegion}
+                onSelectRegion={(region) => {
+                  if (analysisState === "idle") {
+                      setSelectedRegion(region);
+                      setRoadPoints([]); 
+                  }
+                }}
+                roadPoints={roadPoints}
+                onAddRoadPoint={(point) => {
+                  if (analysisState === "idle") setRoadPoints(prev => [...prev, point]);
+                }}
+                analysisState={analysisState}
+                alternatives={analysisResult?.alternatives || []}
+                selectedAltId={selectedAltId}
+              />
+           </div>
+        </div>
       </div>
       
       <LegendBar />
