@@ -1,37 +1,30 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { OfficerDashboard } from '@/features/officer';
-import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import dynamic from "next/dynamic";
+import { OfficerTopBar } from "@/features/officer/components/OfficerTopBar";
+import { OfficerLeftPanel } from "@/features/officer/components/OfficerLeftPanel";
+import { Loader2 } from "lucide-react";
+
+const OfficerMap = dynamic(() => import("@/features/officer/components/OfficerMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex-1 flex flex-col items-center justify-center bg-[#f7f9f7] h-full">
+      <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mb-4" />
+      <span className="text-emerald-700 font-medium">Loading Field Intelligence...</span>
+    </div>
+  ),
+});
 
 export default function OfficerPage() {
-  const { user, loading, signOut } = useAuth();
-  const router = useRouter();
-
-  if (loading) return <div className="p-8">Loading...</div>;
-
-  if (!user) {
-    router.push('/login?role=officer');
-    return null;
-  }
-
   return (
-    <div className="min-h-screen bg-emerald-50 flex flex-col">
-      <header className="bg-emerald-900 text-white p-4 flex justify-between items-center shadow-md">
-        <h1 className="text-xl font-bold">ECO-ROUTE AI | Field Operations</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-sm border flex items-center bg-emerald-800 border-emerald-700 px-3 py-1 rounded">
-            {user.email} (Forest Officer)
-          </span>
-          <button onClick={signOut} className="px-3 py-1 bg-red-500 hover:bg-red-600 rounded text-sm font-semibold transition">
-            Logout
-          </button>
+    <div className="h-screen w-screen overflow-hidden flex flex-col bg-white font-sans">
+      <OfficerTopBar />
+      <div className="flex flex-1 overflow-hidden">
+        <OfficerLeftPanel />
+        <div className="flex-1 relative">
+          <OfficerMap />
         </div>
-      </header>
-      <main className="flex-1">
-        <OfficerDashboard />
-      </main>
+      </div>
     </div>
   );
 }

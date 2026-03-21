@@ -1,41 +1,61 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { AuthorityDashboard } from '@/features/authority';
-import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { TopBar } from "@/features/authority/components/TopBar";
+import { LeftPanel } from "@/features/authority/components/LeftPanel";
+import { MapArea } from "@/features/authority/components/MapArea";
+import { LegendBar } from "@/features/authority/components/LegendBar";
 
-export default function AuthorityPage() {
-  const { user, loading, signOut } = useAuth();
-  const router = useRouter();
+export default function DashboardPage() {
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const [roadPoints, setRoadPoints] = useState<{ lat: number, lng: number }[]>([]);
+  const [analysisState, setAnalysisState] = useState<"idle" | "loading" | "complete">("idle");
 
-  if (loading) return <div className="p-8">Loading...</div>;
+  const handleReset = () => {
+    setSelectedRegion(null);
+    setRoadPoints([]);
+    setAnalysisState("idle");
+  };
 
-  if (!user) {
-    router.push('/login?role=authority');
-    return null;
-  }
-
-  if (user.role && user.role !== 'AUTHORITY' && user.user_metadata?.role !== 'authority') {
-     // strict check if needed, but for now just render
-  }
+  const handleAnalyse = () => {
+    setAnalysisState("loading");
+    // Simulate complex AI/GIS processing
+    setTimeout(() => {
+      setAnalysisState("complete");
+    }, 2500);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-blue-900 text-white p-4 flex justify-between items-center shadow-md">
-        <h1 className="text-xl font-bold">ECO-ROUTE AI | Authority</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-sm border flex items-center bg-blue-800 border-blue-700 px-3 py-1 rounded">
-            {user.email} (Higher Authority)
-          </span>
-          <button onClick={signOut} className="px-3 py-1 bg-red-500 hover:bg-red-600 rounded text-sm font-semibold transition">
-            Logout
-          </button>
-        </div>
-      </header>
-      <main className="flex-1">
-        <AuthorityDashboard />
-      </main>
+    <div className="flex flex-col h-full w-full">
+      <TopBar 
+        selectedRegion={selectedRegion}
+        roadDrawn={roadPoints.length > 1}
+        onReset={handleReset}
+        onAnalyse={handleAnalyse}
+      />
+      
+      <div className="flex flex-1 overflow-hidden">
+        <LeftPanel 
+          selectedRegion={selectedRegion}
+          analysisState={analysisState}
+        />
+        <MapArea 
+          selectedRegion={selectedRegion}
+          onSelectRegion={(region) => {
+            if (analysisState === "idle") {
+                setSelectedRegion(region);
+                setRoadPoints([]); // clear old drawing if switching regions
+            }
+          }}
+          roadPoints={roadPoints}
+          onAddRoadPoint={(point) => {
+            if (analysisState === "idle") setRoadPoints(prev => [...prev, point]);
+          }}
+          analysisState={analysisState}
+        />
+      </div>
+      
+      <LegendBar />
     </div>
   );
 }
