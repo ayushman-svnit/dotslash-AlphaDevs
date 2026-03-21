@@ -9,7 +9,18 @@ class Settings(BaseSettings):
     SUPABASE_URL: str = ""
     SUPABASE_KEY: str = ""
     
+    # AI Model Endpoints
+    ANIMAL_DETECT_API_URL: str = "https://www.animaldetect.com/api/v1/detect-url"
+    ANIMAL_DETECT_API_KEY: str = ""
+    ML_ROUTING_API_URL: str = "http://localhost:8082/predict_route"
+
+    # Twilio Notifications
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_FROM_NUMBER: str = ""
+
     class Config:
         env_file = ".env"
+        env_file_encoding = "utf-8"
 
 settings = Settings()

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from app.routers import authority, officer, citizen
+from fastapi.middleware.cors import CORSMiddleware
+from app.routers import authority, officer, citizen, routing_router, alert_router, report_router
 from app.core.config import settings
 from app.services.redis_service import redis_service
 
@@ -10,10 +11,22 @@ app = FastAPI(
     openapi_url="/api/openapi.json"
 )
 
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Include routers
 app.include_router(authority.router, prefix="/api/v1/authority", tags=["authority"])
 app.include_router(officer.router, prefix="/api/v1/officer", tags=["officer"])
 app.include_router(citizen.router, prefix="/api/v1/citizen", tags=["citizen"])
+app.include_router(routing_router.router, prefix="/api/v1/routing", tags=["routing"])
+app.include_router(alert_router.router, prefix="/ws/alerts", tags=["alerts"])
+app.include_router(report_router.router, prefix="/api/v1/report", tags=["reports"])
 
 @app.get("/")
 async def root():
