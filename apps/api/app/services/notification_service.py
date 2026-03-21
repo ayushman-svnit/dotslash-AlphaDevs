@@ -4,9 +4,9 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-async def send_officer_sighting_alert(officer_phone: str, animal: str, lat: float, lng: float, image_url: str, description: str = "No additional details"):
+async def send_twilio_sms(to_number: str, animal: str, lat: float, lng: float, image_url: str = None, description: str = "No additional details", is_danger_zone: bool = False):
     """
-    Sends a rich SMS/MMS alert to the officer with location, photo, and problem context.
+    Sends a rich SMS/MMS alert to the target phone. Differentiates between Zone Entry and Animal Detection.
     """
     if not settings.TWILIO_ACCOUNT_SID or not settings.TWILIO_AUTH_TOKEN:
         logger.warning("Twilio credentials missing. Skipping SMS alert.")
@@ -14,20 +14,21 @@ async def send_officer_sighting_alert(officer_phone: str, animal: str, lat: floa
 
     url = f"https://api.twilio.com/2010-04-01/Accounts/{settings.TWILIO_ACCOUNT_SID}/Messages.json"
     
-    # To fit BOTH URLs inside 122 characters (Trial Segment Limit):
-    # 1. No Emojis (Forces UCS-2 encoding -> 70 char limit)
-    # 2. Strip "https://" from Maps Link (phones auto-resolve it) to save 8 characters
-    # 3. Super brief labels (L: = Location, P: = Photo)
-    animal_short = animal.upper()[:8]
-    map_short = f"maps.google.com/?q={lat},{lng}"
+    # Format message based on alert type
+    map_link = f"maps.google.com/?q={lat},{lng}"
     
-    # Format: ECO:ELEPHANT L:maps.google.com/?q=10.05,76.67 P:http://img.url
-    message = f"ECO:{animal_short} L:{map_short} P:{image_url}"
+    if is_danger_zone:
+        # Format 1: Clear warning for Danger Zone entry (no picture)
+        message = f"WARNING: You entered a {animal.upper()} zone! L:{map_link}"
+    else:
+        # Format 2: Dense format for Animal Detection (includes picture URL)
+        category = animal.upper()[:8]
+        img = image_url or "http://no-img.link"
+        message = f"ECO:{category} L:{map_link} P:{img}"
 
-    
     data = {
         "From": settings.TWILIO_PHONE_NUMBER,
-        "To": officer_phone,
+        "To": to_number,
         "Body": message
     }
 
@@ -40,7 +41,7 @@ async def send_officer_sighting_alert(officer_phone: str, animal: str, lat: floa
             )
             
             if response.status_code in [200, 201]:
-                logger.info(f"🚀 Twilio alert sent to officer {officer_phone} successfully.")
+                logger.info(f"🚀 Twilio alert sent to {to_number} successfully.")
                 return True
             else:
                 resp_data = response.json()
@@ -50,3 +51,6 @@ async def send_officer_sighting_alert(officer_phone: str, animal: str, lat: floa
     except Exception as e:
         logger.error(f"Twilio connectivity fail: {e}")
         return False
+
+# Legacy Alias for existing reporting logic
+send_officer_sighting_alert = send_twilio_sms

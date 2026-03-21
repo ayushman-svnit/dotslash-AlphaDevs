@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Map, { Source, Layer, NavigationControl, Marker } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { getEcoSafeRoute, GeoJSONPath } from '@/services/routing.service';
-import { AlertTriangle, MapPin, Navigation, PawPrint, Flag } from 'lucide-react';
+import { AlertTriangle, PawPrint, Navigation } from 'lucide-react';
 import { useAlertWebSocket } from '@/lib/hooks/useAlertWebSocket';
 
 const GOOGLE_STYLE: any = {
@@ -35,108 +34,153 @@ const GOOGLE_STYLE: any = {
 
 export const MapComponent = () => {
   const mapRef = React.useRef<any>(null);
-  const [route, setRoute] = useState<GeoJSONPath | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [routeError, setRouteError] = useState<string | null>(null);
-  const [vehicleMode, setVehicleMode] = useState<'car' | 'bike' | 'truck'>('car');
+  const [dangerData, setDangerData] = useState<any>(null);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [proximityAlert, setProximityAlert] = useState<string | null>(null);
+  const [lastSmsZone, setLastSmsZone] = useState<string | null>(null);
   
-  // Dynamic Start/End Coords
-  const [start, setStart] = useState({ lat: 26.840, lng: 80.940 });
-  const [end, setEnd] = useState({ lat: 26.880, lng: 80.980 });
-
-  // Initial Geolocation of USER
-  useEffect(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition((pos) => {
-        const { latitude, longitude } = pos.coords;
-        setStart({ lat: latitude, lng: longitude });
-        setEnd({ lat: latitude + 0.01, lng: longitude + 0.01 });
-        mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 13, duration: 2000 });
-      }, (err) => console.log("Geolocation blocked:", err.message));
-    }
-  }, []);
-
-  // Hook into Real-Time Wildlife Alerts + Simulation
+  // Real-time alerts
   const { activeAlerts, simulateAlert } = useAlertWebSocket('user-123'); 
 
+  // Haversine Distance Formula (Meters)
+  const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371000;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  };
+
+  // Continuously Track User Location (Updates every 60s)
   useEffect(() => {
-    const fetchRoute = async () => {
-      setLoading(true);
-      setRouteError(null);
-      
-      try {
-        const response = await fetch(
-          `http://localhost:8000/api/v1/routing/eco-safe?source_lat=${start.lat}&source_lng=${start.lng}&target_lat=${end.lat}&target_lng=${end.lng}&vehicle_type=${vehicleMode}`
-        );
-        const data = await response.json();
-        
-        if (data.status === 'success') {
-          setRoute(data.geojson);
-        } else {
-          setRoute(null);
-          setRouteError(data.message);
-        }
-      } catch (err) {
-        setRouteError("Connection Error (Check Backend)");
-      } finally {
-        setLoading(false);
+    let isFirstMount = true;
+
+    const fetchLocation = () => {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+          const { latitude, longitude } = pos.coords;
+          setUserLocation({ lat: latitude, lng: longitude });
+
+          // Only force the camera to pan on the very first GPS lock
+          if (isFirstMount) {
+            mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 11, duration: 2500 });
+            isFirstMount = false;
+          }
+        }, (err) => console.log("Geolocation error:", err.message));
       }
     };
-    fetchRoute();
-  }, [start.lat, start.lng, end.lat, end.lng, vehicleMode]);
+
+    // Check immediately, then check every 1 minute
+    fetchLocation();
+    const interval = setInterval(fetchLocation, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Proximity Detection Logic (500m of RED zones) + SMS Dispatch
+  useEffect(() => {
+    if (!userLocation || !dangerData) return;
+
+    // Red zones = Critically Endangered (CR)
+    const redZones = dangerData.features.filter((f: any) => f.properties.category === 'CR');
+    
+    let activeZoneId: string | null = null;
+    for (const zone of redZones) {
+      const [lng, lat] = zone.geometry.coordinates;
+      const dist = getDistance(userLocation.lat, userLocation.lng, lat, lng);
+      if (dist <= 500) {
+        activeZoneId = `${lat},${lng}`;
+        break;
+      }
+    }
+
+    if (activeZoneId) {
+      setProximityAlert("🚨 RED ZONE ALERT: You are within 500m of a Critically Endangered habitat. SMS Sent!");
+      
+      if (lastSmsZone !== activeZoneId) {
+        fetch('http://localhost:8000/ws/alerts/proximity-sms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: 'user-123',
+            lat: userLocation.lat,
+            lng: userLocation.lng,
+            zone_type: 'Critically Endangered'
+          })
+        }).catch(err => console.error("Failed to send proximity SMS:", err));
+        
+        setLastSmsZone(activeZoneId);
+      }
+    } else {
+      setProximityAlert(null);
+      setLastSmsZone(null);
+    }
+  }, [userLocation, dangerData]);
+
+  // Load Danger Zones from our Precomputed Script
+  useEffect(() => {
+    fetch('/danger_bands.json')
+      .then(res => res.json())
+      .then(data => {
+        const geojson = {
+          type: 'FeatureCollection',
+          features: data.map((point: any) => ({
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [point.lng, point.lat]
+            },
+            properties: {
+              color: point.color,
+              category: point.category,
+              level: point.level || 1
+            }
+          }))
+        };
+        setDangerData(geojson);
+      })
+      .catch(console.error);
+  }, []);
 
   return (
     <div className="relative w-full h-full bg-slate-100 rounded-2xl overflow-hidden shadow-2xl border border-slate-200 outline-none">
-      {/* Dynamic Navigation & Simulator Panel */}
+      
+      {/* Legend & Info Panel */}
       <div className="absolute top-4 left-4 z-10 space-y-4">
         <div className="bg-white/95 backdrop-blur p-5 rounded-2xl shadow-xl border border-slate-200 w-80">
           <h3 className="font-black text-lg flex items-center gap-2 mb-1 text-slate-800 uppercase tracking-tighter">
-            <Navigation className="text-emerald-600" />
-            Plan Best Route
+            <AlertTriangle className="text-emerald-600" />
+            Wildlife Hotspots
           </h3>
-          <p className="text-[10px] text-slate-500 font-bold mb-4 uppercase tracking-widest">Forest Navigation Intelligence</p>
+          <p className="text-[10px] text-slate-500 font-bold mb-4 uppercase tracking-widest">Minimal Danger Dots</p>
 
-          <div className="space-y-4">
-            {/* Vehicle Selection */}
-            <div>
-              <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Vehicle Mode</label>
-              <select 
-                value={vehicleMode}
-                onChange={(e) => setVehicleMode(e.target.value as any)}
-                className="w-full p-2 text-sm border rounded-lg bg-emerald-50 text-emerald-800 font-bold outline-none"
-              >
-                <option value="car">🚗 Car (Eco-Standard)</option>
-                <option value="bike">🚲 Bike (High Risk)</option>
-                <option value="truck">🚛 Truck (Super Sensitive)</option>
-              </select>
-            </div>
-
-            <p className="text-[10px] text-slate-500 italic pb-2 border-b">
-              *Try DRAGGING the pins on the map to instantly change your journey!
-            </p>
-          </div>
-
-          <div className="mt-4">
-             {loading ? (
-              <div className="text-xs text-emerald-600 flex items-center gap-2 animate-pulse font-bold bg-emerald-50 p-2 rounded-lg">
-                <AlertTriangle size={14} /> Re-routing for safety...
-              </div>
-            ) : routeError ? (
-              <div className="text-xs text-red-600 flex items-center gap-2 font-bold bg-red-50 p-2 rounded-lg border border-red-200">
-                <AlertTriangle size={14} /> {routeError}
-              </div>
-            ) : route ? (
-              <div className="text-xs text-emerald-700 font-bold bg-emerald-100/50 px-3 py-2 rounded-lg border border-emerald-200">
-                 Journey Path Optimized
-              </div>
-            ) : null}
+          <div className="space-y-2 text-xs font-bold text-slate-700">
+            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#ff0000]"></span> CR - Critically Endangered</div>
+            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#ffa500]"></span> EN - Endangered</div>
+            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#ffff00]"></span> VU - Vulnerable</div>
+            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#9acd32]"></span> NT - Near Threatened</div>
+            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#00ff00]"></span> LC - Least Concern</div>
+            <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-[#006400]"></span> DD - Data Deficient</div>
           </div>
         </div>
+
+        {/* PROXIMITY NOTIFICATION */}
+        {proximityAlert && (
+          <div className="bg-red-600 text-white p-4 rounded-xl shadow-2xl border-4 border-white animate-pulse w-80">
+             <div className="flex items-center gap-3">
+               <AlertTriangle size={24} className="shrink-0" />
+               <p className="text-xs font-black leading-tight">{proximityAlert}</p>
+             </div>
+          </div>
+        )}
 
         {/* Simulator Tools */}
         <div className="bg-slate-900/90 backdrop-blur p-4 rounded-xl shadow-2xl border border-slate-700 w-80">
           <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-3 flex items-center gap-2">
-            <AlertTriangle className="text-amber-400" size={14} /> Wildlife Simulator
+             Test Simulator
           </h4>
           <div className="grid grid-cols-2 gap-2">
             <button 
@@ -158,44 +202,35 @@ export const MapComponent = () => {
       <Map
         ref={mapRef}
         initialViewState={{
-          longitude: start.lng,
-          latitude: start.lat,
-          zoom: 12
+          longitude: 78.9629, 
+          latitude: 20.5937,
+          zoom: 4.5
         }}
         mapStyle={GOOGLE_STYLE}
       >
         <NavigationControl position="bottom-right" />
-        
-        {/* INTERACTIVE MARKERS */}
-        <Marker 
-          latitude={start.lat} 
-          longitude={start.lng}
-          draggable
-          onDragEnd={(e: any) => setStart({ lat: e.lngLat.lat, lng: e.lngLat.lng })}
-        >
-          <div className="group relative flex flex-col items-center cursor-grab active:cursor-grabbing">
-             <div className="absolute -top-8 bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition shadow">START</div>
-             <div className="bg-blue-600 p-2 rounded-full border-2 border-white shadow-2xl">
-               <MapPin size={22} className="text-white" />
-             </div>
-          </div>
-        </Marker>
 
-        <Marker 
-          latitude={end.lat} 
-          longitude={end.lng}
-          draggable
-          onDragEnd={(e: any) => setEnd({ lat: e.lngLat.lat, lng: e.lngLat.lng })}
-        >
-          <div className="group relative flex flex-col items-center cursor-grab active:cursor-grabbing">
-             <div className="absolute -top-8 bg-red-600 text-white px-2 py-0.5 rounded text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition shadow">DESTINATION</div>
-             <div className="bg-red-600 p-2 rounded-full border-2 border-white shadow-2xl">
-               <Flag size={22} className="text-white" />
-             </div>
-          </div>
-        </Marker>
+        {dangerData && (
+          <Source id="danger-zones" type="geojson" data={dangerData}>
+            <Layer 
+              id="danger-dots" 
+              type="circle" 
+              paint={{
+                'circle-color': ['get', 'color'],
+                'circle-radius': [
+                  'interpolate', ['linear'], ['zoom'],
+                  4, 4,
+                  10, 8,
+                  15, 14
+                ],
+                'circle-stroke-width': 1,
+                'circle-stroke-color': '#ffffff',
+                'circle-opacity': 0.8
+              }}
+            />
+          </Source>
+        )}
 
-        {/* Real-time & Simulated Wildlife Markers */}
         {activeAlerts.map((alert, idx) => (
           <Marker key={idx} latitude={alert.lat} longitude={alert.lng}>
             <div className="relative flex items-center justify-center">
@@ -210,32 +245,15 @@ export const MapComponent = () => {
           </Marker>
         ))}
 
-        {route && (
-          <Source id="route-source" type="geojson" data={route}>
-            {/* Outer Glow / Shadow Layer */}
-            <Layer
-              id="route-layer-glow"
-              type="line"
-              layout={{ 'line-join': 'round', 'line-cap': 'round' }}
-              paint={{
-                'line-color': '#064e3b', 
-                'line-width': 16,
-                'line-opacity': 0.4,
-                'line-blur': 4
-              }}
-            />
-            {/* Main Neon Path Layer */}
-            <Layer
-              id="route-layer-main"
-              type="line"
-              layout={{ 'line-join': 'round', 'line-cap': 'round' }}
-              paint={{
-                'line-color': vehicleMode === 'truck' ? '#059669' : '#34d399', 
-                'line-width': 8,
-                'line-opacity': 1.0
-              }}
-            />
-          </Source>
+        {userLocation && (
+          <Marker latitude={userLocation.lat} longitude={userLocation.lng} style={{ zIndex: 50 }}>
+            <div className="relative flex items-center justify-center cursor-help" title="Your Live GPS Location">
+              <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-60" />
+              <div className="relative bg-blue-600 p-2 rounded-full border-2 border-white shadow-xl">
+                <Navigation size={18} className="text-white" />
+              </div>
+            </div>
+          </Marker>
         )}
       </Map>
     </div>
