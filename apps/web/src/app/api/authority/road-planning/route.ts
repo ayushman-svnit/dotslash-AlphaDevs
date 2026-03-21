@@ -17,7 +17,7 @@ export async function POST(req: Request) {
             if (lon < minLon) minLon = lon;
             if (lon > maxLon) maxLon = lon;
         }
-        const buffer = 0.18; // ~20km in degrees
+        const buffer = 0.045; // ~5km in degrees
         const bMinLat = minLat - buffer, bMaxLat = maxLat + buffer;
         const bMinLon = minLon - buffer, bMaxLon = maxLon + buffer;
 
