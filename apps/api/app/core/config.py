@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     # Twilio Notifications
     TWILIO_ACCOUNT_SID: str = ""
     TWILIO_AUTH_TOKEN: str = ""
-    TWILIO_FROM_NUMBER: str = ""
+    TWILIO_PHONE_NUMBER: str = ""
 
     class Config:
         env_file = ".env"

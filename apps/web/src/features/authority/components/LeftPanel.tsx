@@ -78,7 +78,7 @@ export function LeftPanel({
             <div className="space-y-3">
               <div className="flex justify-between items-center text-sm font-bold">
                  <span className="text-slate-800">Affected Species</span>
-                 <span className="text-rose-600">{result.affected_species.join(", ")}</span>
+                 <span className="text-rose-600">{result.affected_species?.join(", ") || "None Identified"}</span>
               </div>
             </div>
           </div>
@@ -100,7 +100,7 @@ export function LeftPanel({
                  <p className="text-[10px] text-slate-500">The current manually drawn trajectory.</p>
                </button>
 
-               {result.alternatives.map((alt: any) => (
+               {result.alternatives?.map((alt: any) => (
                  <button 
                    key={alt.id}
                    onClick={() => onSelectAlt?.(alt.id)}

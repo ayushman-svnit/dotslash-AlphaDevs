@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import { useRouter } from "next/navigation";
 import { Leaf, Lock, Mail, AlertCircle, UserPlus, Building } from "lucide-react";
@@ -10,6 +10,8 @@ import Link from "next/link";
 export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState("citizen");
   const [department, setDepartment] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,11 +23,21 @@ export default function SignupPage() {
     setError("");
 
     try {
+      // Remove any lingering user session data first before signing up new
+      if (auth.currentUser) {
+        await signOut(auth);
+      }
+
       // Create user in Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // Optional: Save 'department' to Firestore here -> doc(db, 'users', userCredential.user.uid)
       
-      router.push("/authority");
+      // Define schema: store Role onto the DisplayName for the AuthContext to read, 
+      // preventing the need for a separate db roundtrip
+      await updateProfile(userCredential.user, {
+        displayName: `${fullName}|${role.toUpperCase()}`
+      });
+      
+      router.push(`/${role}`);
     } catch (err: any) {
       setError(err.message || "Failed to create account. Email may be in use.");
     } finally {
@@ -55,6 +67,37 @@ export default function SignupPage() {
         )}
 
         <form onSubmit={handleSignup} className="space-y-4">
+          
+          {/* Full Name */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-2">Full Name</label>
+            <div className="relative">
+              <input
+                type="text"
+                required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all shadow-sm"
+                placeholder="John Doe"
+              />
+            </div>
+          </div>
+
+          {/* Role */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-2">Role Status</label>
+            <div className="relative">
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all shadow-sm"
+              >
+                <option value="citizen">Citizen</option>
+                <option value="officer">Officer</option>
+                <option value="authority">Authority</option>
+              </select>
+            </div>
+          </div>
           
           {/* Email */}
           <div>
