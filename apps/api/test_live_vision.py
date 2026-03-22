@@ -28,6 +28,11 @@ async def main():
         import json
         print(json.dumps(result, indent=2))
         
+        # Checking for possible misaligned field names
+        print(f"\nExtracted label: {result.get('prediction', {}).get('label')}")
+        print(f"Extracted confidence: {result.get('prediction', {}).get('confidence')}")
+
+        
         if result.get("prediction", {}).get("is_mock", False):
             print("\n⚠️ WARNING: The API failed and hit the MOCK FALLBACK block.")
             print("This usually means the URL is wrong, the key is invalid, or you are disconnected.")

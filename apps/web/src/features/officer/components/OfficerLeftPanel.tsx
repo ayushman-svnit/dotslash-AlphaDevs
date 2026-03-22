@@ -59,7 +59,7 @@ export function OfficerLeftPanel({ centerLat, centerLng }: Props) {
         const headers: any = { "Content-Type": "application/json" };
         if (token) headers["Authorization"] = `Bearer ${token}`;
 
-        const apiBase = process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:8001";
+        const apiBase = process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:8000";
         const [unitsRes, reportRes, alertRes] = await Promise.all([
           fetch(`${apiBase}/api/v1/officer/active-units`, { headers }).catch(() => null),
           fetch(`${apiBase}/api/v1/officer/citizen-reports`, { headers }).catch(() => null),

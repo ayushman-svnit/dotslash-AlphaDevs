@@ -14,23 +14,36 @@ async def send_twilio_sms(to_number: str, animal: str, lat: float, lng: float, i
 
     url = f"https://api.twilio.com/2010-04-01/Accounts/{settings.TWILIO_ACCOUNT_SID}/Messages.json"
     
-    # Format message based on alert type
-    map_link = f"maps.google.com/?q={lat},{lng}"
+    # Format message to stay within 160 characters (1 segment)
+    # 4 decimal places = ~11m precision, enough for sightings
+    map_link = f"google.com/maps?q={lat:.4f},{lng:.4f}"
+    
+    # Format message to stay within 160 characters (1 segment)
+    # 3 decimal places = ~110m precision, enough for general sightings
+    map_link = f"google.com/maps?q={lat:.3f},{lng:.3f}"
     
     if is_danger_zone:
-        # Format 1: Clear warning for Danger Zone entry (no picture)
-        message = f"WARNING: You entered a {animal.upper()} zone! L:{map_link}"
+        # Format 1: Danger Zone entry (~35 chars)
+        message = f"W:{animal.upper()}! @{map_link}"
     else:
-        # Format 2: Dense format for Animal Detection (includes picture URL)
+        # Format 2: Animal Detection (~110-120 chars)
         category = animal.upper()[:8]
-        img = image_url or "http://no-img.link"
-        message = f"ECO:{category} L:{map_link} P:{img}"
+        
+        # Shorten Cloudinary URL by removing the version segment (v12345678/)
+        img = image_url or "no-img"
+        import re
+        img = re.sub(r'/v\d+/', '/', img)
+        
+        message = f"S:{category} @{map_link} *{img}"
+
+
 
     data = {
         "From": settings.TWILIO_PHONE_NUMBER,
         "To": to_number,
-        "Body": message
+        "Body": message[:160]
     }
+
 
     try:
         async with httpx.AsyncClient() as client:

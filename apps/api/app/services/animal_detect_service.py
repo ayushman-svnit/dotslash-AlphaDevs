@@ -36,7 +36,9 @@ async def detect_animal_in_image(image_url: str) -> Dict[str, Any]:
                 return {"status": "error", "prediction": {}}
 
             data = response.json()
+            logger.info(f"AI API Response: {data}")
             annotations = data.get("annotations", [])
+
             
             if not annotations:
                 return {
@@ -46,14 +48,23 @@ async def detect_animal_in_image(image_url: str) -> Dict[str, Any]:
 
             # Extract the top prediction
             top_prediction = annotations[0]
+            
+            # The AI API sometimes uses different field names: 'score', 'probability', or 'confidence'
+            confidence = top_prediction.get("score")
+            if confidence is None:
+                confidence = top_prediction.get("probability")
+            if confidence is None:
+                confidence = top_prediction.get("confidence", 0.0)
+                
             return {
                 "status": "success",
                 "prediction": {
                     "label": top_prediction.get("label", "Unknown"),
-                    "confidence": top_prediction.get("confidence", 0.0),
+                    "confidence": confidence,
                     "verified": True
                 }
             }
+
 
     except Exception as e:
         logger.error(f"Vision Engine Connectivity Failure: {e}")

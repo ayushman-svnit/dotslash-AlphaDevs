@@ -60,9 +60,16 @@ export default function SignupPage() {
         ? `${fullName}|${role.toUpperCase()}|${officerLat}|${officerLng}`
         : `${fullName}|${role.toUpperCase()}`;
       await updateProfile(userCredential.user, { displayName });
-      // Re-set current user to force onAuthStateChanged to re-fire with updated profile
-      await updateCurrentUser(auth, userCredential.user);
+      
+      // Critical: Reload user data to ensure displayName is propagated locally
+      await userCredential.user.reload();
+      const updatedUser = auth.currentUser;
+      if (updatedUser) {
+        await updateCurrentUser(auth, updatedUser);
+      }
+      
       router.push(`/${role}`);
+
     } catch (err: any) {
       setError(err.message || "Failed to create account. Email may already be in use.");
     } finally {
@@ -238,26 +245,6 @@ export default function SignupPage() {
               </div>
             </div>
 
-            {/* Officer Location — only shown when Officer role is selected */}
-            {role === "officer" && (
-              <div>
-                <label className="block text-xs font-black text-green-300 uppercase tracking-widest mb-2">
-                  Posted Location <span className="text-green-500/50 normal-case font-medium">(lat, lng of your patrol zone)</span>
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <input
-                    type="number" step="any" value={officerLat}
-                    onChange={e => setOfficerLat(e.target.value)}
-                    className={inputClsBase} placeholder="Latitude e.g. 22.33"
-                  />
-                  <input
-                    type="number" step="any" value={officerLng}
-                    onChange={e => setOfficerLng(e.target.value)}
-                    className={inputClsBase} placeholder="Longitude e.g. 80.61"
-                  />
-                </div>
-              </div>
-            )}
 
             {/* Email */}
             <div>
@@ -291,7 +278,7 @@ export default function SignupPage() {
                     <input 
                       type="number" step="0.0001" required 
                       placeholder="Lat (e.g. 26.91)" 
-                      value={postingLat} onChange={e => setPostingLat(e.target.value)}
+                      value={officerLat} onChange={e => setOfficerLat(e.target.value)}
                       className={inputClsBase}
                     />
                   </div>
@@ -299,7 +286,7 @@ export default function SignupPage() {
                     <input 
                       type="number" step="0.0001" required 
                       placeholder="Lng (e.g. 75.81)" 
-                      value={postingLng} onChange={e => setPostingLng(e.target.value)}
+                      value={officerLng} onChange={e => setOfficerLng(e.target.value)}
                       className={inputClsBase}
                     />
                   </div>
@@ -308,8 +295,8 @@ export default function SignupPage() {
                   type="button"
                   onClick={() => {
                     navigator.geolocation.getCurrentPosition((pos) => {
-                      setPostingLat(pos.coords.latitude.toFixed(4));
-                      setPostingLng(pos.coords.longitude.toFixed(4));
+                      setOfficerLat(pos.coords.latitude.toFixed(4));
+                      setOfficerLng(pos.coords.longitude.toFixed(4));
                     });
                   }}
                   className="w-full py-2 bg-green-500/10 border border-green-500/30 rounded-xl text-[10px] font-black text-green-400 uppercase tracking-widest hover:bg-green-500/20 transition-all"

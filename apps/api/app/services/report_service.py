@@ -32,7 +32,9 @@ async def process_citizen_report(report: CitizenReportCreate) -> Dict[str, Any]:
     # 1. AI Verification
     image_to_verify = report.image_url if report.image_url else "https://images.unsplash.com/photo-1557050543-4d5f4e07ef46"
     ai_result = await detect_animal_in_image(image_to_verify)
+    logger.info(f"AI Result Payload: {ai_result}")
     prediction = ai_result.get("prediction", {})
+
     
     label = prediction.get("label", report.species_id)
     confidence = prediction.get("confidence", 0.0)

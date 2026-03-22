@@ -35,10 +35,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        // Force a reload if displayName is missing (common right after signup)
+        if (!firebaseUser.displayName) {
+          try {
+            await firebaseUser.reload();
+          } catch (e) {
+            console.error("Auth sync reload failed:", e);
+          }
+        }
+
         const displayName = firebaseUser.displayName || '';
         const parts = displayName.split('|');
         const name = parts[0] || '';
-        const role = (parts[1] as UserRole) || 'CITIZEN';
+        const roleStr = (parts[1] || 'CITIZEN').toUpperCase();
+        const role = roleStr as UserRole;
+
+
         
         let postingLat, postingLng;
         // The display name format was updated in signup to: name|ROLE|lat|lng

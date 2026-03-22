@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Bell, MapPin, AlertCircle, ShieldAlert } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 interface Notification {
   id: string;
@@ -19,11 +20,18 @@ export function NotificationPanel({ officerId }: { officerId: string }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const { getToken } = useAuth();
   const fetchNotifs = async () => {
     try {
+      const token = await getToken();
       const apiBase = process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:8000";
-      const res = await fetch(`${apiBase}/api/v1/officer/notifications?officer_id=${officerId}`);
+      const res = await fetch(`${apiBase}/api/v1/officer/notifications?officer_id=${officerId}`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
       const data = await res.json();
+
       if (data.status === "success") {
         setNotifications(data.notifications || []);
       }

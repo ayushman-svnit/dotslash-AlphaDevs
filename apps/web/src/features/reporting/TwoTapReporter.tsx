@@ -65,6 +65,18 @@ export const TwoTapReporter = ({ userId = 'user-123' }: { userId?: string }) => 
     setImagePreview(URL.createObjectURL(file));
   };
 
+  const uploadImage = async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const resp = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Upload failed');
+    return data.url;
+  };
+
   const handleSubmit = async () => {
     if (!coords) {
       setStatusMsg('Waiting for GPS signal...');
@@ -82,7 +94,7 @@ export const TwoTapReporter = ({ userId = 'user-123' }: { userId?: string }) => 
         const compressedFile = new File([compressedBlob], imageFile.name, { type: 'image/jpeg' });
 
         setStatusMsg('Uploading photo to secure storage...');
-        imageUrl = await uploadImageToFirebase(compressedFile);
+        imageUrl = await uploadImage(compressedFile);
       }
 
       // 2. Submit report
@@ -107,7 +119,7 @@ export const TwoTapReporter = ({ userId = 'user-123' }: { userId?: string }) => 
         return;
       }
 
-      const apiBase = process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:8001";
+      const apiBase = process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:8000";
       const resp = await fetch(`${apiBase}/api/v1/report`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

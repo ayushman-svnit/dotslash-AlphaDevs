@@ -23,7 +23,7 @@ import { PostingPanel } from "@/features/officer/components/PostingPanel";
 import React, { useState } from "react";
 
 export default function OfficerPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, getToken } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export default function OfficerPage() {
       if (!user || !user.postingLat || !user.postingLng) return;
       
       try {
-        const token = await user.getIdToken(); 
+        const token = await getToken(); 
         const apiBase = process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:8000";
         await fetch(`${apiBase}/api/v1/officer/posting`, {
           method: "POST",
