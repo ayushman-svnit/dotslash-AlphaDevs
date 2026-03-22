@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 async def send_twilio_sms(to_number: str, animal: str, lat: float, lng: float, image_url: str = None, description: str = "No additional details", is_danger_zone: bool = False):
     """
     Sends a rich SMS/MMS alert to the target phone. Differentiates between Zone Entry and Animal Detection.
+    Strictly optimized to fit within ONE GSM-7 segment (160 characters).
     """
     if not settings.TWILIO_ACCOUNT_SID or not settings.TWILIO_AUTH_TOKEN:
         logger.warning("Twilio credentials missing. Skipping SMS alert.")
@@ -14,34 +15,39 @@ async def send_twilio_sms(to_number: str, animal: str, lat: float, lng: float, i
 
     url = f"https://api.twilio.com/2010-04-01/Accounts/{settings.TWILIO_ACCOUNT_SID}/Messages.json"
     
-    # Format message to stay within 160 characters (1 segment)
-    # 4 decimal places = ~11m precision, enough for sightings
-    map_link = f"google.com/maps?q={lat:.4f},{lng:.4f}"
+    # g.co/maps?q= saves 6 chars over google.com/maps?q=
+    map_link = f"g.co/maps?q={lat:.3f},{lng:.3f}"
     
-    # Format message to stay within 160 characters (1 segment)
-    # 3 decimal places = ~110m precision, enough for general sightings
-    map_link = f"google.com/maps?q={lat:.3f},{lng:.3f}"
-    
+    # ASCII normalized components
+    animal_clean = animal.upper().encode('ascii', 'ignore').decode('ascii')
+    img_raw = image_url or "no-img"
+    import re
+    img_clean = re.sub(r'/v\d+/', '/', img_raw)
+    img_clean = img_clean.replace("https://res.cloudinary.com/", "res.cloudinary.com/").replace("http://res.cloudinary.com/", "res.cloudinary.com/")
+
     if is_danger_zone:
-        # Format 1: Danger Zone entry (~35 chars)
-        message = f"W:{animal.upper()}! @{map_link}"
+        # Format 1: Danger Zone entry (~35-45 chars)
+        label_limit = 155 - len(map_link) - 5
+        animal_label = animal_clean[:label_limit]
+        message = f"W:{animal_label}! @{map_link}"
     else:
-        # Format 2: Animal Detection (~110-120 chars)
-        category = animal.upper()[:8]
-        
-        # Shorten Cloudinary URL by removing the version segment (v12345678/)
-        img = image_url or "no-img"
-        import re
-        img = re.sub(r'/v\d+/', '/', img)
-        
-        message = f"S:{category} @{map_link} *{img}"
+        # Format 2: Animal Detection
+        # Priority: map_link > img_clean > category
+        base_str = f"S: @ {map_link} *"
+        remaining = 158 - len(base_str)
+        # Allocate rest to image and category
+        category = animal_clean[:10]
+        img_final = img_clean[:max(0, remaining - len(category))]
+        message = f"S:{category} @{map_link} *{img_final}"
 
-
+    # Strict Guarantee: One Segment (160 Chars)
+    final_body = message[:159]
+    logger.info(f"📏 SMS Segment: {len(final_body)} ch | {final_body}")
 
     data = {
         "From": settings.TWILIO_PHONE_NUMBER,
         "To": to_number,
-        "Body": message[:160]
+        "Body": final_body
     }
 
 
