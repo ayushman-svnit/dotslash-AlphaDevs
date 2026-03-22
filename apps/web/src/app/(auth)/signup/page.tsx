@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createUserWithEmailAndPassword, updateProfile, signOut, updateCurrentUser } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import { useRouter } from "next/navigation";
+import clsx from "clsx";
 import {
   Leaf, Lock, Mail, AlertCircle, Building,
   ChevronRight, Loader2, ShieldCheck, Map, Users, TreePine,
@@ -40,6 +41,13 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,9 +60,16 @@ export default function SignupPage() {
         ? `${fullName}|${role.toUpperCase()}|${officerLat}|${officerLng}`
         : `${fullName}|${role.toUpperCase()}`;
       await updateProfile(userCredential.user, { displayName });
-      // Re-set current user to force onAuthStateChanged to re-fire with updated profile
-      await updateCurrentUser(auth, userCredential.user);
+      
+      // Critical: Reload user data to ensure displayName is propagated locally
+      await userCredential.user.reload();
+      const updatedUser = auth.currentUser;
+      if (updatedUser) {
+        await updateCurrentUser(auth, updatedUser);
+      }
+      
       router.push(`/${role}`);
+
     } catch (err: any) {
       setError(err.message || "Failed to create account. Email may already be in use.");
     } finally {
@@ -176,13 +191,28 @@ export default function SignupPage() {
           <h1 className="text-3xl font-black tracking-tighter text-white mb-1">Create Account</h1>
           <p className="text-green-300/70 font-medium text-sm mb-8">Join the environmental intelligence platform</p>
 
-          {error && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-              className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-2xl flex items-start gap-3 text-red-300 text-sm">
-              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-              <span className="font-medium">{error}</span>
+          {/* Floating Popup Error Toast */}
+          <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] w-full max-w-sm px-6">
+            <motion.div
+              initial={{ opacity: 0, y: -40, scale: 0.9 }}
+              animate={error ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -40, scale: 0.9 }}
+              className={clsx(
+                "p-4 bg-red-600 text-white rounded-[2rem] shadow-[0_20px_50px_rgba(220,38,38,0.4)] flex items-center gap-4 border border-white/20 backdrop-blur-md transition-all",
+                !error && "pointer-events-none"
+              )}
+            >
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-0.5">Registration Error</p>
+                <p className="text-xs font-bold leading-tight">{error}</p>
+              </div>
+              <button onClick={() => setError("")} className="w-8 h-8 hover:bg-white/10 rounded-full flex items-center justify-center text-white/60 hover:text-white transition-colors">
+                ×
+              </button>
             </motion.div>
-          )}
+          </div>
 
           <form onSubmit={handleSignup} className="space-y-4">
 
@@ -215,26 +245,6 @@ export default function SignupPage() {
               </div>
             </div>
 
-            {/* Officer Location — only shown when Officer role is selected */}
-            {role === "officer" && (
-              <div>
-                <label className="block text-xs font-black text-green-300 uppercase tracking-widest mb-2">
-                  Posted Location <span className="text-green-500/50 normal-case font-medium">(lat, lng of your patrol zone)</span>
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <input
-                    type="number" step="any" value={officerLat}
-                    onChange={e => setOfficerLat(e.target.value)}
-                    className={inputClsBase} placeholder="Latitude e.g. 22.33"
-                  />
-                  <input
-                    type="number" step="any" value={officerLng}
-                    onChange={e => setOfficerLng(e.target.value)}
-                    className={inputClsBase} placeholder="Longitude e.g. 80.61"
-                  />
-                </div>
-              </div>
-            )}
 
             {/* Email */}
             <div>
@@ -255,6 +265,46 @@ export default function SignupPage() {
                   className={inputCls} placeholder="E.g. FOREST-DPT-11" />
               </div>
             </div>
+
+            {/* Officer-specific Posting Location */}
+            {role === "officer" && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-4 pt-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <Map className="w-4 h-4 text-green-400" />
+                  <span className="text-[10px] font-black text-green-300 uppercase tracking-widest">Duty Posting Location</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="relative">
+                    <input 
+                      type="number" step="0.0001" required 
+                      placeholder="Lat (e.g. 26.91)" 
+                      value={officerLat} onChange={e => setOfficerLat(e.target.value)}
+                      className={inputClsBase}
+                    />
+                  </div>
+                  <div className="relative">
+                    <input 
+                      type="number" step="0.0001" required 
+                      placeholder="Lng (e.g. 75.81)" 
+                      value={officerLng} onChange={e => setOfficerLng(e.target.value)}
+                      className={inputClsBase}
+                    />
+                  </div>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    navigator.geolocation.getCurrentPosition((pos) => {
+                      setOfficerLat(pos.coords.latitude.toFixed(4));
+                      setOfficerLng(pos.coords.longitude.toFixed(4));
+                    });
+                  }}
+                  className="w-full py-2 bg-green-500/10 border border-green-500/30 rounded-xl text-[10px] font-black text-green-400 uppercase tracking-widest hover:bg-green-500/20 transition-all"
+                >
+                  📍 Use Current Location
+                </button>
+              </motion.div>
+            )}
 
             {/* Password */}
             <div>

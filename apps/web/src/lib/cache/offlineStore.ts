@@ -58,7 +58,8 @@ export const syncOfflineReports = async () => {
   // Try to send each report
   const promises = allReports.map(async (report) => {
     try {
-      const resp = await fetch('http://localhost:8000/api/v1/report/', {
+      const apiBase = process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:8001";
+      const resp = await fetch(`${apiBase}/api/v1/report`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(report),

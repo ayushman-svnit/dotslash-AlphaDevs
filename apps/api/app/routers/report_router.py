@@ -4,7 +4,7 @@ from app.services.report_service import process_citizen_report
 
 router = APIRouter()
 
-@router.post("/")
+@router.post("")
 async def submit_report(report: CitizenReportCreate):
     """
     Accepts a 2-tap citizen report containing precise coordinates and heading.

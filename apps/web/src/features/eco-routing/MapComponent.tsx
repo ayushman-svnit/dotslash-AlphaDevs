@@ -62,7 +62,14 @@ export const MapComponent = () => {
       if ("geolocation" in navigator) {
         navigator.geolocation.getCurrentPosition((pos) => {
           const { latitude, longitude } = pos.coords;
-          setUserLocation({ lat: latitude, lng: longitude });
+          
+          setUserLocation(prev => {
+            if (prev) {
+                const distance = getDistance(prev.lat, prev.lng, latitude, longitude);
+                if (distance < 50 && !isFirstMount) return prev; // Don't update for micro-movements
+            }
+            return { lat: latitude, lng: longitude };
+          });
 
           // Only force the camera to pan on the very first GPS lock
           if (isFirstMount) {
@@ -101,7 +108,8 @@ export const MapComponent = () => {
       setProximityAlert("🚨 RED ZONE ALERT: You are within 500m of a Critically Endangered habitat. SMS Sent!");
       
       if (lastSmsZone !== activeZoneId) {
-        fetch('http://localhost:8000/ws/alerts/proximity-sms', {
+        const apiBase = process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:8000";
+        fetch(`${apiBase}/ws/alerts/proximity-sms`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

@@ -5,6 +5,22 @@ const withPWA = withPWAInit({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === "development",
+  runtimeCaching: [
+    {
+      urlPattern: /^https:\/\/mt[0-3]\.google\.com\/vt\/lyrs=y/,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'google-maps-tiles',
+        expiration: {
+          maxEntries: 500,
+          maxAgeSeconds: 60 * 60 * 24 * 7, // 1 week
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+      },
+    },
+  ],
 });
 
 /** @type {import('next').NextConfig} */

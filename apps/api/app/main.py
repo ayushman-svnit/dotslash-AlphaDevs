@@ -5,6 +5,8 @@ from app.core.config import settings
 from app.core.security import get_current_user
 from app.services.redis_service import redis_service
 
+from fastapi.middleware.gzip import GZipMiddleware
+
 app = FastAPI(
     title="Hackathon Starter API",
     version="1.0.0",
@@ -20,6 +22,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Enable Compression
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Include routers — authority + officer are JWT-protected
 app.include_router(authority.router, prefix="/api/v1/authority", tags=["authority"],

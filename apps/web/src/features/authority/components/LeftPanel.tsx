@@ -42,6 +42,51 @@ export function LeftPanel({
     );
   }
 
+  if (analysisState === "loading") {
+    return (
+      <div className="w-[480px] bg-[#0c120c] p-12 flex flex-col items-center justify-center text-center relative overflow-hidden z-20 transition-all duration-700">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-green-500/10 rounded-full blur-[120px] -mr-20 -mt-20 animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-[80px] -ml-20 -mb-20" />
+        
+        <div className="relative z-10 flex flex-col items-center w-full">
+           <div className="mb-12 relative">
+             <div className="absolute inset-0 bg-green-500/20 blur-2xl rounded-full scale-150 animate-pulse" />
+             <div className="w-48 h-48 rounded-full border-[10px] border-emerald-900/30 flex items-center justify-center relative">
+                <div className="absolute inset-0 border-t-8 border-green-500 rounded-full animate-spin" />
+                <Activity className="w-16 h-16 text-green-500 animate-pulse" />
+             </div>
+           </div>
+
+           <p className="text-xs font-black uppercase tracking-[0.5em] text-green-500 mb-4 animate-pulse">
+             Cognitive AI Sync
+           </p>
+           <h2 className="text-5xl font-black text-white tracking-tighter uppercase leading-[0.9] mb-8">
+             Analyzing <br/> Movement <br/> Patterns
+           </h2>
+
+           <div className="w-full h-2 bg-emerald-900/40 rounded-full overflow-hidden mb-4 border border-emerald-800/30">
+              <div className="h-full bg-gradient-to-r from-emerald-500 via-green-400 to-emerald-600 w-[65%] animate-[progress_3s_ease-in-out_infinite]" />
+           </div>
+
+           <div className="space-y-2 w-full">
+              {["Mapping Biodiversity Nodes...", "Calculating Connectivity Loss...", "Optimizing Corridor Detours..."].map((s, i) => (
+                <div key={i} className={`text-[10px] font-bold uppercase tracking-widest ${i === 1 ? 'text-white' : 'text-emerald-800'}`}>
+                   {s}
+                </div>
+              ))}
+           </div>
+        </div>
+        
+        <style jsx>{`
+          @keyframes progress {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(200%); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
   // ECO_ROUTE Results Section
   if (mode === "ECO_ROUTE" && analysisState === "complete" && result) {
     const meta = result.metadata || {};
@@ -57,7 +102,7 @@ export function LeftPanel({
             <div className="relative">
               <div className="absolute -inset-4 border-2 border-dashed border-blue-400/20 rounded-full animate-[spin_25s_linear_infinite]" />
               <div className="w-40 h-40 rounded-full border-8 border-blue-500 shadow-2xl flex flex-col items-center justify-center bg-white">
-                 <span className="text-5xl font-black tracking-tighter text-blue-700">{meta.best_composite_score}</span>
+                 <span className="text-5xl font-black tracking-tighter text-blue-700">{meta.best_composite_score?.toFixed(2)}</span>
                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Safety Index</span>
               </div>
             </div>
@@ -107,17 +152,81 @@ export function LeftPanel({
     );
   }
 
-  // Existing Standard Planning Left Panel (Minimal snippet for continuation)
-  return (
-    <div className="w-[480px] bg-[#f5f2e9] border-r-2 border-green-900/10 overflow-y-auto flex flex-col relative z-40">
-       <div className="p-8">
-          <p className="text-sm font-black text-[#166534] uppercase tracking-widest">Structural Planning Results</p>
-          <div className="mt-10 p-12 bg-white rounded-[3rem] border border-slate-100 text-center shadow-xl">
-            <ShieldCheck className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
-            <h3 className="text-xl font-black text-slate-900 tracking-tighter uppercase">Ready for Analysis</h3>
-            <p className="text-xs font-bold text-slate-400 mt-2">Analysis content for Planning mode is fully functional.</p>
+  // PLANNING Results Section
+  if (mode === "PLANNING" && analysisState === "complete" && result) {
+    return (
+      <div className="w-[480px] bg-[#f5f2e9] border-r-2 border-green-900/10 overflow-y-auto flex flex-col relative shadow-2xl z-40">
+        <div className="p-8 border-b border-green-900/5">
+           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600 mb-1">GIS Spatial Audit</p>
+           <h2 className="text-2xl font-black tracking-tighter text-[#166534] uppercase">Impact Assessment</h2>
+        </div>
+
+        <div className="p-8 border-b border-green-900/5 bg-white/40">
+          <div className="flex items-center gap-6 mb-8">
+            <div className={`w-28 h-28 rounded-3xl flex flex-col items-center justify-center border-4 ${
+              parseInt(result.primary_impact_score) > 50 ? 'border-rose-500 bg-rose-50' : 'border-emerald-500 bg-emerald-50'
+            }`}>
+               <span className="text-4xl font-black tracking-tighter text-slate-900">{result.primary_impact_score}</span>
+               <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">Impact</span>
+            </div>
+            <div>
+               <h3 className={`text-xl font-black uppercase tracking-tight ${
+                  result.damage_classification.includes('CRITICAL') ? 'text-rose-600' : 'text-emerald-700'
+               }`}>
+                 {result.damage_classification}
+               </h3>
+               <p className="text-[10px] font-bold text-slate-500 max-w-[200px] leading-tight mt-1 uppercase">
+                 This score measures potential biodiversity loss and corridor fragmentation.
+               </p>
+            </div>
           </div>
-       </div>
-    </div>
-  );
+
+          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Affected Endangered Species</h4>
+          <div className="flex flex-wrap gap-2 mb-8">
+            {result.affected_species?.length > 0 ? (
+              result.affected_species.map((sp: string, i: number) => (
+                <span key={i} className="px-3 py-1.5 bg-rose-100 text-rose-700 rounded-lg text-[10px] font-bold border border-rose-200 uppercase">
+                  {sp}
+                </span>
+              ))
+            ) : (
+              <span className="text-[10px] font-bold text-emerald-600 italic">No critical sightings identified in this radius.</span>
+            )}
+          </div>
+        </div>
+
+        <div className="p-8">
+           <h3 className="text-xs font-black uppercase tracking-widest text-[#166534] mb-4">Mitigation Alternatives</h3>
+           <div className="space-y-4">
+             {result.alternatives?.map((alt: any) => (
+                <button 
+                  key={alt.id}
+                  onClick={() => onSelectAlt?.(selectedAltId === alt.id ? null : alt.id)}
+                  className={`w-full text-left p-5 rounded-3xl border-2 transition-all ${
+                    selectedAltId === alt.id 
+                      ? 'bg-[#166534] border-[#166534] text-white shadow-xl scale-[1.02]' 
+                      : 'bg-white border-white hover:border-emerald-500 shadow-sm'
+                  }`}
+                >
+                   <div className="flex justify-between items-start mb-2">
+                     <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                       selectedAltId === alt.id ? 'bg-white/20' : 'bg-emerald-50 text-emerald-700'
+                     }`}>{alt.id.replace('_', ' ')}</span>
+                     <span className={`text-xs font-black ${selectedAltId === alt.id ? 'text-green-300' : 'text-emerald-600'}`}>Score: {alt.impact_score}</span>
+                   </div>
+                   <h4 className="text-sm font-black uppercase tracking-tight mb-1">{alt.name}</h4>
+                   <p className={`text-[10px] font-medium leading-tight mb-3 ${selectedAltId === alt.id ? 'text-white/70' : 'text-slate-500'}`}>{alt.description}</p>
+                   <div className="flex items-center justify-between text-[10px] font-black uppercase">
+                      <span className={selectedAltId === alt.id ? 'text-green-200' : 'text-rose-500'}>Cost +{alt.cost_increase}%</span>
+                      {selectedAltId === alt.id && <span className="animate-pulse">Active on Map</span>}
+                   </div>
+                </button>
+             ))}
+           </div>
+        </div>
+      </div>
+    );
+  }
+
+  return <div className="w-[420px] bg-[#f5f2e9] border-r-2 border-green-900/10" />;
 }

@@ -16,31 +16,37 @@ class ProximityRequest(BaseModel):
     lng: float
     zone_type: str
 
+from app.services.alert_manager import create_alert
+
 @router.post("/proximity-sms")
 async def send_proximity_sms(request: ProximityRequest):
     """
     Sends an SMS notification when a user enters a high-danger zone.
+    Also alerts the nearest officer!
     """
     try:
-        # Using the phone number provided by the user earlier: +919408569457
+        # Standard user alert
         target_phone = "+919408569457"
         
-        # Format a brief alert message
-        message_body = f"ECO ALERT: You entered a {request.zone_type} zone at {request.lat},{request.lng}. Stay alert!"
-        
-        success = await send_twilio_sms(
+        # 1. Alert the User
+        await send_twilio_sms(
             to_number=target_phone,
             animal=request.zone_type,
             lat=request.lat,
             lng=request.lng,
-            description=f"Entered {request.zone_type}",
             is_danger_zone=True
         )
         
-        if success:
-            return {"status": "success", "message": "SMS alert dispatched"}
-        else:
-            raise HTTPException(status_code=500, detail="Failed to send SMS via Twilio")
+        # 2. Alert the Nearest Officer (INTERNAL)
+        await create_alert(
+            title="DANGER ZONE ENTRY",
+            message=f"A user has entered a {request.zone_type} zone. Immediate attention required.",
+            lat=request.lat,
+            lng=request.lng,
+            severity="CRITICAL"
+        )
+        
+        return {"status": "success", "message": "User warned and nearest officer alerted."}
             
     except Exception as e:
         logger.error(f"Error sending proximity SMS: {e}")

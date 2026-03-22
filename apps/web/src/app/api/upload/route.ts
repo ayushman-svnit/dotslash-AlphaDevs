@@ -1,23 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getStorage } from 'firebase-admin/storage';
+import { v2 as cloudinary } from 'cloudinary';
 
-const BUCKET = (process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || '')
-  .replace('gs://', '');
-
-function getAdminStorage() {
-  if (!getApps().length) {
-    initializeApp({
-      credential: cert({
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      }),
-      storageBucket: BUCKET,
-    });
-  }
-  return getStorage().bucket(BUCKET);
-}
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,18 +14,39 @@ export async function POST(req: NextRequest) {
     const file = formData.get('file') as File;
     if (!file) return NextResponse.json({ error: 'No file' }, { status: 400 });
 
-    console.log('[upload] using bucket:', BUCKET);
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const path = `wildlife-sightings/${Date.now()}-${file.name}`;
+    console.log('[upload] Using Cloudinary with Cloud Name:', process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME);
+    console.log('[upload] Using Preset:', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
+    
+    // Convert File to Buffer for Cloudinary upload
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    
+    // Upload to Cloudinary using a promise to handle the callback-based API
+    const result: any = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'wildlife-sightings',
+          resource_type: 'auto',
+          upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
+        },
+        (error, result) => {
+          if (error) {
+            console.error('[upload] Cloudinary Stream Error:', error);
+            reject(error);
+          } else {
+            resolve(result);
+          }
+        }
+      );
+      uploadStream.end(buffer);
+    });
 
-    const bucket = getAdminStorage();
-    const fileRef = bucket.file(path);
-    await fileRef.save(buffer, { contentType: file.type, public: true });
-
-    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${path}`;
-    return NextResponse.json({ url: publicUrl });
+    console.log('[upload] success:', result.secure_url);
+    return NextResponse.json({ url: result.secure_url });
   } catch (e: any) {
-    console.error('[upload]', e.message);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    console.error('[upload] Critical Failure:', e);
+    return NextResponse.json({ error: e.message || 'Unknown error' }, { status: 500 });
   }
 }
+
+

@@ -170,80 +170,113 @@ const FEATURES = [
   { icon: <TreePine className="w-9 h-9" />, title: 'Deforestation Radar', desc: 'Satellite-fed AI that flags unauthorized clearing in protected wildlife corridors instantly.', bg: '#0f172a', fg: 'white', stat: 83 },
 ];
 
-const ECO_DATA = [
-  { month: 'Jan', sightings: 42, alerts: 28, corridors: 65 },
-  { month: 'Feb', sightings: 58, alerts: 41, corridors: 70 },
-  { month: 'Mar', sightings: 71, alerts: 53, corridors: 76 },
-  { month: 'Apr', sightings: 65, alerts: 49, corridors: 74 },
-  { month: 'May', sightings: 89, alerts: 67, corridors: 82 },
-  { month: 'Jun', sightings: 95, alerts: 72, corridors: 88 },
-  { month: 'Jul', sightings: 110, alerts: 85, corridors: 91 },
-  { month: 'Aug', sightings: 103, alerts: 79, corridors: 89 },
-  { month: 'Sep', sightings: 128, alerts: 96, corridors: 94 },
-  { month: 'Oct', sightings: 142, alerts: 108, corridors: 97 },
-  { month: 'Nov', sightings: 134, alerts: 101, corridors: 95 },
-  { month: 'Dec', sightings: 156, alerts: 119, corridors: 99 },
+const FEATURE_IMPORTANCE_DATA = [
+  { label: 'risk_sq', value: 25.6, color: '#03045e' },
+  { label: 'risk_interaction', value: 24.7, color: '#480ca8' },
+  { label: 'Rf_sq', value: 13.1, color: '#7209b7' },
+  { label: 'Rf', value: 11.5, color: '#b5179e' },
+  { label: 'spatial_risk', value: 9.2, color: '#f72585' },
+  { label: 'rf_dominance', value: 7.7, color: '#e05780' },
+  { label: 'rw_dominance', value: 4.0, color: '#ee6c4d' },
+  { label: 'rw_rf_ratio', value: 2.2, color: '#f9844a' },
+  { label: 'Rw', value: 1.1, color: '#f9c74f' },
+  { label: 'Rw_sq', value: 0.9, color: '#f9f74f' },
 ];
 
-function MiniAreaChart() {
-  const W = 560; const H = 240; const PAD = { t: 20, r: 20, b: 40, l: 44 };
+function FeatureImportanceChart() {
+  const W = 600; const H = 320; 
+  const PAD = { t: 40, r: 20, b: 80, l: 50 };
   const IW = W - PAD.l - PAD.r; const IH = H - PAD.t - PAD.b;
-  const maxVal = 160;
-  const xStep = IW / (ECO_DATA.length - 1);
-  const yScale = (v: number) => IH - (v / maxVal) * IH;
-
-  const pathD = (key: 'sightings' | 'alerts' | 'corridors') =>
-    ECO_DATA.map((d, i) => `${i === 0 ? 'M' : 'L'}${PAD.l + i * xStep},${PAD.t + yScale(d[key])}`).join(' ');
-  const areaD = (key: 'sightings' | 'alerts' | 'corridors') =>
-    `${pathD(key)} L${PAD.l + (ECO_DATA.length - 1) * xStep},${PAD.t + IH} L${PAD.l},${PAD.t + IH} Z`;
-
-  const lines = [4, 2] as const;
-  const gridYs = [0, 40, 80, 120, 160];
+  const maxVal = 30; // 30% to give some headroom
+  
+  const barWidth = (IW / FEATURE_IMPORTANCE_DATA.length) * 0.8;
+  const gap = (IW / FEATURE_IMPORTANCE_DATA.length) * 0.2;
 
   return (
-    <div className="w-full overflow-x-auto">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto">
-        <defs>
-          <linearGradient id="gS" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#4ade80" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#4ade80" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id="gA" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ec4899" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#ec4899" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id="gC" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
-          </linearGradient>
-        </defs>
+    <div className="w-full overflow-hidden">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto font-sans">
         {/* Grid lines */}
-        {gridYs.map(v => (
-          <g key={v}>
-            <line x1={PAD.l} y1={PAD.t + yScale(v)} x2={W - PAD.r} y2={PAD.t + yScale(v)} stroke="#d1fae5" strokeWidth="1" strokeDasharray="4,4" />
-            <text x={PAD.l - 8} y={PAD.t + yScale(v) + 4} textAnchor="end" fontSize="10" fill="#6b7280">{v}</text>
+        {[0, 0.05, 0.1, 0.15, 0.2, 0.25].map((v, i) => (
+          <g key={i}>
+            <line 
+              x1={PAD.l} 
+              y1={PAD.t + IH - (v * 100 / maxVal) * IH} 
+              x2={W - PAD.r} 
+              y2={PAD.t + IH - (v * 100 / maxVal) * IH} 
+              stroke="#e2e8f0" 
+              strokeWidth="1" 
+              strokeDasharray="4,4" 
+            />
+            <text 
+              x={PAD.l - 10} 
+              y={PAD.t + IH - (v * 100 / maxVal) * IH + 4} 
+              textAnchor="end" 
+              fontSize="10" 
+              className="fill-slate-400 font-bold"
+            >
+              {v.toFixed(2)}
+            </text>
           </g>
         ))}
-        {/* Area fills */}
-        <path d={areaD('sightings')} fill="url(#gS)" />
-        <path d={areaD('alerts')} fill="url(#gA)" />
-        <path d={areaD('corridors')} fill="url(#gC)" />
-        {/* Lines */}
-        <path d={pathD('sightings')} fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-        <path d={pathD('alerts')} fill="none" stroke="#ec4899" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-        <path d={pathD('corridors')} fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="6,3" />
-        {/* Dots on sightings */}
-        {ECO_DATA.map((d, i) => (
-          <circle key={i} cx={PAD.l + i * xStep} cy={PAD.t + yScale(d.sightings)} r="3.5" fill="#166534" stroke="#4ade80" strokeWidth="2" />
-        ))}
-        {/* X-axis labels */}
-        {ECO_DATA.map((d, i) => (
-          <text key={i} x={PAD.l + i * xStep} y={H - 8} textAnchor="middle" fontSize="10" fill="#6b7280">{d.month}</text>
-        ))}
+
+        {/* Y-axis Label */}
+        <text 
+          transform={`rotate(-90, 15, ${PAD.t + IH/2})`} 
+          x="15" 
+          y={PAD.t + IH/2} 
+          textAnchor="middle" 
+          fontSize="11" 
+          className="fill-slate-600 font-black uppercase tracking-widest"
+        >
+          Importance Score
+        </text>
+
+        {/* Bars */}
+        {FEATURE_IMPORTANCE_DATA.map((d, i) => {
+          const x = PAD.l + i * (barWidth + gap) + gap/2;
+          const barHeight = (d.value / maxVal) * IH;
+          const y = PAD.t + IH - barHeight;
+
+          return (
+            <g key={i} className="group cursor-help">
+              <rect 
+                x={x} 
+                y={y} 
+                width={barWidth} 
+                height={barHeight} 
+                fill={d.color}
+                rx="4"
+                className="transition-all duration-300 hover:brightness-110"
+              />
+              <text 
+                x={x + barWidth/2} 
+                y={y - 8} 
+                textAnchor="middle" 
+                fontSize="10" 
+                className="fill-slate-900 font-black"
+              >
+                {d.value}%
+              </text>
+              <text 
+                x={x + barWidth/2} 
+                y={PAD.t + IH + 15} 
+                textAnchor="end" 
+                fontSize="10" 
+                className="fill-slate-500 font-bold" 
+                transform={`rotate(-45, ${x + barWidth/2}, ${PAD.t + IH + 15})`}
+              >
+                {d.label}
+              </text>
+            </g>
+          );
+        })}
       </svg>
     </div>
   );
 }
+
+
+
 
 function FeatureCarouselAndChart() {
   const [active, setActive] = useState(0);
@@ -338,30 +371,29 @@ function FeatureCarouselAndChart() {
         className="bg-white rounded-3xl p-8 border border-green-100 shadow-sm">
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h3 className="text-2xl font-black tracking-tight text-slate-900">Eco Intelligence</h3>
-            <p className="text-slate-400 font-medium text-sm mt-1">Yearly corridor activity overview</p>
+            <h3 className="text-2xl font-black tracking-tight text-slate-900">Feature Importance</h3>
+            <p className="text-slate-400 font-medium text-sm mt-1">Drives Model Predictions</p>
           </div>
-          <div className="flex flex-col gap-1.5 text-xs font-bold">
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#4ade80] inline-block" />Sightings</span>
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-[#ec4899] inline-block" />Alerts</span>
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 border-2 border-dashed border-[#22d3ee] rounded-full inline-block" />Corridors %</span>
+          <div className="flex flex-col gap-1.5 text-xs font-bold text-right">
+             <span className="text-slate-400 uppercase tracking-widest">Model: Eco-Forest V2</span>
+             <span className="text-green-600 font-black">Top 10 Attributes</span>
           </div>
         </div>
-        <MiniAreaChart />
+        <FeatureImportanceChart />
 
         {/* Summary stats below chart */}
-        <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-green-50">
+        <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-green-50">
           {[
-            { label: 'Peak Sightings', value: '156', color: '#4ade80' },
-            { label: 'Peak Alerts', value: '119', color: '#ec4899' },
-            { label: 'Corridor Health', value: '99%', color: '#22d3ee' },
+            { label: 'Primary Driver', value: 'risk_sq', color: '#03045e' },
+            { label: 'Cumulative Impact', value: '89.4%', color: '#f72585' },
           ].map((s, i) => (
             <div key={i} className="text-center">
-              <p className="text-2xl font-black" style={{ color: s.color }}>{s.value}</p>
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-wide mt-1">{s.label}</p>
+              <p className="text-xl font-black" style={{ color: s.color }}>{s.value}</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide mt-1">{s.label}</p>
             </div>
           ))}
         </div>
+
       </motion.div>
 
     </div>
@@ -408,7 +440,7 @@ export default function Home() {
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-bold text-green-200 uppercase tracking-widest">
             <a href="#impact" className="hover:text-white transition-colors">Platform</a>
-            <a href="#roles"  className="hover:text-white transition-colors">Roles</a>
+            <a href="#roles" className="hover:text-white transition-colors">Roles</a>
             <a href="#features" className="hover:text-white transition-colors">Features</a>
           </div>
           <Link href="/login" className="px-5 py-2 bg-[#4ade80] text-green-900 rounded-full font-black text-sm hover:bg-green-300 transition-all shadow-md">Sign In</Link>
@@ -464,13 +496,13 @@ export default function Home() {
         {/* HERO BASE cream ribbon ticker — sits below hero content */}
         <div className="w-full mt-auto">
           <TickerBelt
-            items={['Wildlife AI','Corridor Mapping','Forest Intelligence','Eco Routing','Species Tracking','Ranger Alerts','Impact Simulation']}
+            items={['Wildlife AI', 'Corridor Mapping', 'Forest Intelligence', 'Eco Routing', 'Species Tracking', 'Ranger Alerts', 'Impact Simulation']}
             speed={25} cream rotate="-2deg"
           />
         </div>
       </section>
 
-      {/* ── STATS / TRILEMMA ─────────────────────── */}
+      {/* ── STATS / IMPACT ─────────────────────────── */}
       <section id="impact" className="bg-[#f5f2e9] pt-32 pb-24">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div
@@ -479,15 +511,18 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mb-24"
           >
-            <h2 className="text-5xl md:text-7xl font-black tracking-tighter">Solving the <br /> Eco Trilemma</h2>
+            <h2 className="text-5xl md:text-7xl font-black tracking-tighter uppercase italic leading-none">The Eco<br/><span className="text-[#166534] not-italic">Impact Engine</span></h2>
+            <p className="text-slate-500 font-bold uppercase tracking-widest text-sm mt-6">Real-world results powered by field-validated intelligence</p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-24">
             {[
               { num: 70, suf: '%', label: 'Biodiversity Loss', bg: '#ec4899', desc: 'AI predicts and flags habitat fragmentation in real-time before infrastructure locks in damage.' },
-              { num: 99, suf: '.2%', label: 'AI Accuracy', bg: '#4ade80', desc: 'Computer-vision species detection dispatches ranger alerts within seconds of a sighting event.' },
+              { num: 98.7, suf: '', label: 'OOB R² Score', bg: '#03045e', desc: 'High-fidelity model validation ensuring that corridor predictions match real-world movement patterns.' },
               { num: 1200, suf: '+', label: 'Species Protected', bg: '#22d3ee', desc: 'Continuous movement-pattern tracking across protected corridors for over 1,200 species nationwide.' },
+           
             ].map((s, i) => (
+
               <motion.div
                 key={i}
                 initial={{ y: 60, opacity: 0 }}
@@ -588,7 +623,10 @@ export default function Home() {
       </section>
 
 
+
+
       {/* ── BIG CTA CARDS ─────────────────────────── */}
+
       <section className="bg-[#f5f2e9] pb-24">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-8">
           {[
@@ -621,7 +659,7 @@ export default function Home() {
       {/* ── FINAL CTA BELT ────────────────────────── */}
       <div className="-my-6 z-10 relative">
         <TickerBelt
-          items={['Deploy Platform','Protect Wildlife','Predict Impact','Join ECO-ROUTE AI','Save Corridors','Real-time Intelligence']}
+          items={['Deploy Platform', 'Protect Wildlife', 'Predict Impact', 'Join ECO-ROUTE AI', 'Save Corridors', 'Real-time Intelligence']}
           speed={18} bg="#4ade80" fg="#052e16" rotate="-1.5deg"
         />
       </div>

@@ -18,8 +18,9 @@ async def main():
     print(f"Sending from Twilio Number: {settings.TWILIO_PHONE_NUMBER}")
     
     success = await send_officer_sighting_alert(
-        officer_phone=phone_number,
+        to_number=phone_number,
         animal="Elephant",
+
         lat=10.05,
         lng=76.67,
         image_url="https://images.unsplash.com/photo-1557050543-4d5f4e07ef46",

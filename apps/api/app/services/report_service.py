@@ -1,5 +1,7 @@
 import h3
 import logging
+import json
+import time
 from typing import Dict, Any
 from app.schemas.report_schema import CitizenReportCreate
 from app.services.alert_service import register_active_risk
@@ -30,7 +32,9 @@ async def process_citizen_report(report: CitizenReportCreate) -> Dict[str, Any]:
     # 1. AI Verification
     image_to_verify = report.image_url if report.image_url else "https://images.unsplash.com/photo-1557050543-4d5f4e07ef46"
     ai_result = await detect_animal_in_image(image_to_verify)
+    logger.info(f"AI Result Payload: {ai_result}")
     prediction = ai_result.get("prediction", {})
+
     
     label = prediction.get("label", report.species_id)
     confidence = prediction.get("confidence", 0.0)
@@ -56,23 +60,49 @@ async def process_citizen_report(report: CitizenReportCreate) -> Dict[str, Any]:
             urgency="Critical"
         )
         
-        # 4. TWILIO BLAST TO OFFICER
-        officer_phone = get_nearest_officer_phone(report.lat, report.lng)
-        logger.info(f"Attempting Twilio SMS to officer at {officer_phone}...")
+        from app.services.alert_manager import create_alert
         
-        sms_sent = await send_officer_sighting_alert(
-            officer_phone=officer_phone,
+        # 4. Notify Nearest Officer
+        await create_alert(
+            title=f"VERIFIED {label.upper()} SIGHTING",
+            message=f"AI confirmed {label} with {int(confidence*100)}% confidence at location. Status promoted to Critical.",
+            lat=report.lat,
+            lng=report.lng,
+            severity="CRITICAL",
+            image_url=image_to_verify
+        )
+        
+        # 5. TWILIO BLAST TO USER (AS BEFORE)
+        officer_phone = get_nearest_officer_phone(report.lat, report.lng)
+        await send_officer_sighting_alert(
+            to_number=officer_phone,
             animal=label,
             lat=report.lat,
             lng=report.lng,
             image_url=image_to_verify,
-            description=report.description or "No additional details."
+            description="AI-Verified Emergency Alert"
         )
+
+        # 6. CACHE REPORT IN REDIS FOR DASHBOARD PERSISTENCE
+        try:
+            now = int(time.time())
+            report_data = {
+                "id": f"rep_{now}_{report.species_id[:3]}",
+                "species": label,
+                "lat": report.lat,
+                "lng": report.lng,
+                "time_ago": "Just now",
+                "verified": status.startswith("Verified"),
+                "description": "AI-Verified live sighting",
+                "timestamp": now,
+                "image_url": image_to_verify
+            }
+            await redis_service.set(f"report:{report_data['id']}", json.dumps(report_data), expire=86400) # 24h
+            logger.info(f"💾 PERSISTED: Report for {label} cached in Redis.")
+        except Exception as cache_err:
+            logger.error(f"❌ CACHE FAILED: {cache_err}")
         
-        if sms_sent:
-            logger.info(f"🚀 SUCCESS: Report promoted and SMS delivered to {officer_phone}")
-        else:
-            logger.error("⚠️ FAILURE: SMS failed to send. Check SID/Token.")
+        logger.info(f"🚀 SUCCESS: Incident promoted and Nearest Officer notified.")
     else:
         logger.warning(f"AI Verification too low for {label}: {confidence*100}%. Minimum threshold is 30%.")
 
