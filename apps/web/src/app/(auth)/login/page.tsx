@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Leaf, Lock, Mail, AlertCircle, Loader2, ChevronRight, ShieldCheck, Map, Users } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import clsx from "clsx";
 
 /* ── Floating shape helpers ── */
 function Blob({ className, style }: { className: string; style?: React.CSSProperties }) {
@@ -26,6 +27,13 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  React.useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   // Redirect already logged-in users
   React.useEffect(() => {
@@ -166,13 +174,28 @@ function LoginForm() {
           <h1 className="text-3xl font-black tracking-tighter text-white mb-1">Sign In</h1>
           <p className="text-green-300/70 font-medium text-sm mb-8">Access your intelligence dashboard</p>
 
-          {error && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-              className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-2xl flex items-start gap-3 text-red-300 text-sm">
-              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-              <span className="font-medium">{error}</span>
+          {/* Floating Popup Error Toast */}
+          <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] w-full max-w-sm px-6">
+            <motion.div
+              initial={{ opacity: 0, y: -40, scale: 0.9 }}
+              animate={error ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -40, scale: 0.9 }}
+              className={clsx(
+                "p-4 bg-red-600 text-white rounded-[2rem] shadow-[0_20px_50px_rgba(220,38,38,0.4)] flex items-center gap-4 border border-white/20 backdrop-blur-md transition-all",
+                !error && "pointer-events-none"
+              )}
+            >
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-0.5">Authentication Error</p>
+                <p className="text-xs font-bold leading-tight">{error}</p>
+              </div>
+              <button onClick={() => setError("")} className="w-8 h-8 hover:bg-white/10 rounded-full flex items-center justify-center text-white/60 hover:text-white transition-colors">
+                ×
+              </button>
             </motion.div>
-          )}
+          </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div>

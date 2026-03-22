@@ -1,9 +1,40 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query, Body, HTTPException
+from typing import List, Dict, Any
+from app.services.officer_service import update_officer_posting, get_all_officers
+from app.services.alert_manager import get_officer_notifications
 from app.services.alert_service import _ACTIVE_RISKS_CACHE
 import json
 import time
 
 router = APIRouter()
+
+@router.post("/posting")
+async def register_posting(
+    officer_id: str = Body(...),
+    name: str = Body(...),
+    lat: float = Body(...),
+    lng: float = Body(...)
+):
+    """Update officer's current duty location."""
+    try:
+        await update_officer_posting(officer_id, name, lat, lng)
+        return {"status": "success", "message": f"Officer {name} posted at {lat}, {lng}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/notifications")
+async def fetch_notifications(officer_id: str = Query(...)):
+    """Retrieve all in-app notifications for the officer."""
+    try:
+        notifs = await get_officer_notifications(officer_id)
+        return {"status": "success", "notifications": notifs}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/active-units")
+async def get_active_units():
+    """List all officers and their locations."""
+    return await get_all_officers()
 
 @router.get("/movement-prediction")
 async def get_movement_prediction():

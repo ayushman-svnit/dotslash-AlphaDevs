@@ -18,18 +18,46 @@ const OfficerMap = dynamic(() => import("@/features/officer/components/OfficerMa
   ),
 });
 
+import { NotificationPanel } from "@/features/officer/components/NotificationPanel";
+import { PostingPanel } from "@/features/officer/components/PostingPanel";
+import React, { useState } from "react";
+
 export default function OfficerPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
+    const syncPosting = async () => {
+      if (!user || !user.postingLat || !user.postingLng) return;
+      
+      try {
+        const token = await user.getIdToken(); 
+        const apiBase = process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:8000";
+        await fetch(`${apiBase}/api/v1/officer/posting`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            officer_id: user.uid,
+            name: user.name || "Field Ranger",
+            lat: user.postingLat,
+            lng: user.postingLng
+          })
+        });
+      } catch (err) {
+        console.error("Auto-sync posting failed:", err);
+      }
+    };
+
     if (!loading) {
       if (!user) {
         router.push("/login");
-      } else if (user.role === "AUTHORITY") {
-        router.push("/authority");
-      } else if (user.role === "CITIZEN") {
-        router.push("/citizen");
+      } else if (user.role !== "OFFICER") {
+        router.push("/citizen"); 
+      } else {
+        syncPosting();
       }
     }
   }, [user, loading, router]);
@@ -42,16 +70,25 @@ export default function OfficerPage() {
       </div>
     );
   }
+
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#f5f2e9] font-sans">
+    <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#121212] font-sans">
       <OfficerTopBar />
-      <div className="flex flex-1 overflow-hidden">
-        <OfficerLeftPanel />
+      <div className="flex flex-1 overflow-hidden relative">
+        <OfficerLeftPanel 
+          centerLat={user.postingLat} 
+          centerLng={user.postingLng} 
+        />
+        
+        {/* Main Tactical Map Area */}
         <div className="flex-1 relative p-4 md:p-8">
-           <div className="w-full h-full rounded-[2.5rem] overflow-hidden border-4 border-[#166534] shadow-2xl relative bg-white flex flex-col">
+           <div className="w-full h-full rounded-[2.5rem] overflow-hidden border-4 border-[#166534] shadow-2xl relative bg-black/20 flex flex-col">
               <OfficerMap />
            </div>
         </div>
+
+        {/* RIght Sidebar: Tactical Alerts */}
+        <NotificationPanel officerId={user.uid || "OFFICER-DEFAULT"} />
       </div>
     </div>
   );

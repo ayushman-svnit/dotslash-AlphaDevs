@@ -1,7 +1,8 @@
 "use client";
 
-import { Leaf, RefreshCcw, Activity, MapPin } from "lucide-react";
+import { Leaf, RefreshCcw, Activity, MapPin, LogOut } from "lucide-react";
 import clsx from "clsx";
+import { useAuth } from "@/context/AuthContext";
 
 interface TopBarProps {
   roadDrawn: boolean;
@@ -13,6 +14,8 @@ interface TopBarProps {
 }
 
 export function TopBar({ roadDrawn, pointCount, onReset, onAnalyse, mode, onSetMode }: TopBarProps) {
+  const { signOut } = useAuth();
+
   return (
     <div className="h-20 w-full bg-[#166534] text-white flex items-center justify-between px-8 shadow-[0_4px_30px_rgba(0,0,0,0.3)] z-50 flex-shrink-0 relative overflow-hidden">
       {/* Decorative SVG curve in top bar */}
@@ -70,7 +73,7 @@ export function TopBar({ roadDrawn, pointCount, onReset, onAnalyse, mode, onSetM
 
         <button
           onClick={onReset}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-full border-2 border-white/10 hover:bg-white/5 transition-all text-xs font-black uppercase tracking-widest"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 hover:bg-white/5 transition-all text-[10px] font-black uppercase tracking-widest"
         >
           <RefreshCcw className="h-3.5 w-3.5" />
           Reset
@@ -80,7 +83,7 @@ export function TopBar({ roadDrawn, pointCount, onReset, onAnalyse, mode, onSetM
           onClick={onAnalyse}
           disabled={mode === "PLANNING" ? !roadDrawn : pointCount < 2}
           className={clsx(
-            "flex items-center gap-3 px-8 py-3 rounded-full text-xs font-black uppercase tracking-[0.2em] transition-all shadow-lg",
+            "flex items-center gap-3 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg",
             (mode === "PLANNING" ? roadDrawn : pointCount >= 2)
               ? "bg-[#4ade80] text-green-900 hover:bg-green-300 hover:-translate-y-0.5"
               : "bg-white/5 text-white/30 cursor-not-allowed opacity-40 border border-white/5"
@@ -88,6 +91,16 @@ export function TopBar({ roadDrawn, pointCount, onReset, onAnalyse, mode, onSetM
         >
           <Activity className="h-4 w-4" />
           {mode === "PLANNING" ? "Analyse Impact" : "Predict Eco-Route"}
+        </button>
+
+        <div className="w-px h-8 bg-white/10 ml-2" />
+
+        <button
+          onClick={signOut}
+          className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-100 hover:text-white transition-all shadow-lg border border-red-500/20"
+          title="Logout"
+        >
+          <LogOut className="h-4 w-4" />
         </button>
       </div>
     </div>

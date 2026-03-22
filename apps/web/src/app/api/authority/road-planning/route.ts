@@ -118,14 +118,16 @@ export async function POST(req: Request) {
                     name: "Eco-Bridge Route",
                     impact_score: "45",
                     description: "Elevated road segment allowing wildlife to pass underneath safely, avoiding high density forest pockets.",
-                    cost_increase: 15
+                    cost_increase: 15,
+                    coordinates: points.map(([lat, lon], i) => i === 0 || i === points.length - 1 ? [lat, lon] : [lat + 0.005, lon + 0.005])
                 },
                 {
                     id: "alt_2_detour",
                     name: "Eastern Detour",
                     impact_score: "22",
                     description: "Bypasses the critical radius by re-routing through already degraded agricultural lands.",
-                    cost_increase: 40
+                    cost_increase: 40,
+                    coordinates: points.map(([lat, lon], i) => i === 0 || i === points.length - 1 ? [lat, lon] : [lat - 0.012, lon + 0.015])
                 }
             ] : []
         });

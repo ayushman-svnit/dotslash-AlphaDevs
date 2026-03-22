@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Camera, MapPin, Send, AlertTriangle, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { saveReportOffline } from '@/lib/cache/offlineStore';
+import { compressImage } from '@/lib/utils/imageCompressor';
 
 const ANIMALS = [
   { id: 'Elephant', emoji: '🐘' },
@@ -76,21 +77,12 @@ export const TwoTapReporter = ({ userId = 'user-123' }: { userId?: string }) => 
       let imageUrl: string | undefined;
       if (imageFile) {
         setStatus('uploading');
-        setStatusMsg('Uploading photo...');
-        try {
-          const formData = new FormData();
-          formData.append('file', imageFile);
-          const uploadRes = await Promise.race([
-            fetch('/api/upload', { method: 'POST', body: formData }),
-            new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
-          ]);
-          if (uploadRes.ok) {
-            const d = await uploadRes.json();
-            imageUrl = d.url;
-          }
-        } catch {
-          // silently skip — backend uses fallback image for AI
-        }
+        setStatusMsg('Compressing image for fast upload...');
+        const compressedBlob = await compressImage(imageFile);
+        const compressedFile = new File([compressedBlob], imageFile.name, { type: 'image/jpeg' });
+
+        setStatusMsg('Uploading photo to secure storage...');
+        imageUrl = await uploadImageToFirebase(compressedFile);
       }
 
       // 2. Submit report
@@ -115,7 +107,8 @@ export const TwoTapReporter = ({ userId = 'user-123' }: { userId?: string }) => 
         return;
       }
 
-      const resp = await fetch('http://localhost:8000/api/v1/report/', {
+      const apiBase = process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:8001";
+      const resp = await fetch(`${apiBase}/api/v1/report`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -130,9 +123,9 @@ export const TwoTapReporter = ({ userId = 'user-123' }: { userId?: string }) => 
 
       if (data.status === 'Verified (AI)' || data.status === 'Verified (Fallback)') {
         setStatus('verified');
-        const msg = data.status === 'Verified (Fallback)' 
-            ? `Report received via Emergency Fallback! Officer has been notified.`
-            : `AI Verified! Officer has been notified via SMS.`;
+        const msg = data.status === 'Verified (Fallback)'
+          ? `Report received via Emergency Fallback! Officer has been notified.`
+          : `AI Verified! Officer has been notified via SMS.`;
         setStatusMsg(msg);
       } else if (data.status === 'Verified (Existing)') {
         setStatus('verified');
@@ -160,11 +153,10 @@ export const TwoTapReporter = ({ userId = 'user-123' }: { userId?: string }) => 
   const isLoading = status === 'uploading' || status === 'submitting';
 
   return (
-    <div className={`transition-all duration-300 w-full ${
-      isDriverMode
+    <div className={`transition-all duration-300 w-full ${isDriverMode
         ? 'bg-slate-900 text-white rounded-t-3xl p-6 absolute bottom-0 left-0 right-0 z-40 pb-12 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]'
         : 'bg-white rounded-2xl shadow-lg border border-slate-200 p-5'
-    }`}>
+      }`}>
 
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
@@ -206,11 +198,10 @@ export const TwoTapReporter = ({ userId = 'user-123' }: { userId?: string }) => 
                 <button
                   key={a.id}
                   onClick={() => setSelectedAnimal(selectedAnimal === a.id ? null : a.id)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                    selectedAnimal === a.id
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${selectedAnimal === a.id
                       ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
                       : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-                  }`}
+                    }`}
                 >
                   {a.emoji} {a.id}
                 </button>
@@ -260,11 +251,10 @@ export const TwoTapReporter = ({ userId = 'user-123' }: { userId?: string }) => 
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
-              isLoading
+            className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${isLoading
                 ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                 : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-200 active:scale-95'
-            }`}
+              }`}
           >
             {isLoading ? (
               <><Loader2 size={18} className="animate-spin" /> {statusMsg}</>

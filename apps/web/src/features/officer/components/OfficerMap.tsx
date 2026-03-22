@@ -2,7 +2,7 @@
 
 import { MapContainer, TileLayer, Circle, Marker, Popup, ZoomControl } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import L from "leaflet";
 
 const incidentIcon = new L.Icon({
@@ -61,10 +61,15 @@ export default function OfficerMap() {
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/v1/officer/citizen-reports")
+    const apiBase = process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:8001";
+    fetch(`${apiBase}/api/v1/officer/citizen-reports`)
       .then(r => r.json())
-      .then(d => setIncidents(d || []))
-      .catch(() => {});
+      .then(d => {
+          if (Array.isArray(d)) setIncidents(d);
+          else if (d && Array.isArray(d.reports)) setIncidents(d.reports);
+          else setIncidents([]);
+      })
+      .catch(() => setIncidents([]));
   }, []);
 
   const pulseColor = (severity: string) =>
@@ -73,17 +78,21 @@ export default function OfficerMap() {
   return (
     <div className="relative w-full h-full">
       {/* Live badge */}
-      <div className="absolute top-4 right-4 z-[1000] flex items-center gap-2 bg-black/70 text-white text-[10px] font-black uppercase tracking-widest px-3 py-2 rounded-full backdrop-blur-sm">
-        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-        LIVE · NASA FIRMS · {lastUpdated || 'Loading...'}
+      <div className="absolute top-4 right-4 z-[1000] flex items-center gap-2 bg-white/80 text-slate-800 text-[10px] font-black uppercase tracking-widest px-4 py-2.5 rounded-full backdrop-blur-md border border-white shadow-xl">
+        <span className={`w-2.5 h-2.5 rounded-full ${fires.length > 0 ? 'bg-red-500 animate-pulse outline outline-2 outline-offset-2 outline-red-500/20' : 'bg-slate-300'} `} />
+        LIVE · NASA FIRMS · {lastUpdated ? `LAST SYNC: ${lastUpdated}` : 'SYNCING...'}
       </div>
 
       {/* Legend */}
-      <div className="absolute bottom-4 left-4 z-[1000] bg-black/70 text-white text-[10px] font-bold px-4 py-3 rounded-2xl backdrop-blur-sm space-y-1.5">
-        <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-red-500 inline-block" /> Critical (&gt;100 MW)</div>
-        <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-orange-500 inline-block" /> High (30–100 MW)</div>
-        <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-yellow-400 inline-block" /> Moderate (&lt;30 MW)</div>
-        <div className="text-white/50 mt-1">Total active: {fires.length} hotspots</div>
+      <div className="absolute bottom-4 left-4 z-[1000] bg-white/80 text-slate-800 text-[10px] font-black px-5 py-4 rounded-[2rem] backdrop-blur-md border border-white shadow-2xl space-y-2">
+        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-200/50">
+          <span className="text-sm">🔥</span>
+          Live Forest Fires · NASA FIRMS
+        </div>
+        <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-red-500 inline-block shadow-sm" /> Critical (&gt;100 MW)</div>
+        <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-orange-500 inline-block shadow-sm" /> High (30–100 MW)</div>
+        <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-yellow-400 inline-block shadow-sm" /> Moderate (&lt;30 MW)</div>
+        <div className="text-slate-400 mt-2 font-bold uppercase tracking-tighter">Total active: {fires.length} hotspots</div>
       </div>
 
       <MapContainer
@@ -94,13 +103,13 @@ export default function OfficerMap() {
       >
         <ZoomControl position="topright" />
         <TileLayer
-          attribution='&copy; OpenStreetMap'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
 
         {/* Fire hotspots from NASA FIRMS */}
         {fires.map((fire, idx) => (
-          <div key={`fire-${idx}`}>
+          <React.Fragment key={`fire-${idx}`}>
             {/* Outer pulse ring */}
             <Circle
               center={[fire.lat, fire.lon]}
@@ -135,11 +144,11 @@ export default function OfficerMap() {
                 </div>
               </Popup>
             </Marker>
-          </div>
+          </React.Fragment>
         ))}
 
         {/* Citizen incident markers */}
-        {incidents.map((incident, idx) => (
+        {Array.isArray(incidents) && incidents.map((incident: any, idx) => (
           <Marker key={`inc-${idx}`} position={[incident.lat, incident.lng]} icon={incidentIcon}>
             <Popup>
               <div className="p-1">
